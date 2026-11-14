@@ -9,6 +9,8 @@ import {
   recentChemicals,
   removeRecord,
   resolveWashedAt,
+  updateRecord,
+  type RecordEdit,
 } from './domain/history'
 import {
   addStep,
@@ -146,6 +148,12 @@ function App() {
     if (menu !== chosenMenu) setPlan((p) => applyMenu(p, menu, createId))
   }
 
+  const handleUpdateRecord = (id: string, edit: RecordEdit) => {
+    setHistory((h) => updateRecord(h, id, edit))
+    // 状態タグが変わると同じ提案 ID が別の内容になりうるため、見送りは解除する
+    setDraft((d) => (d.dismissed === undefined ? d : { ...d, dismissed: undefined }))
+  }
+
   const handlePureWaterChange = (hasPureWater: boolean) => {
     setSettings((s) => setPureWater(s, hasPureWater))
     setPlan((p) => applyPureWater(p, hasPureWater))
@@ -198,7 +206,7 @@ function App() {
             onStartWash={handleStartWash}
           />
         ) : (
-          <HistoryScreen history={history} onRemove={handleRemoveRecord} />
+          <HistoryScreen history={history} onRemove={handleRemoveRecord} onUpdate={handleUpdateRecord} />
         )}
       </main>
       <TabBar current={tab} onChange={handleTabChange} />

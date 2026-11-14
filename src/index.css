@@ -248,6 +248,23 @@ textarea {
   justify-content: space-between;
   font-weight: 600;
 }
+.card__edit {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.record-edit {
+  margin-top: 8px;
+}
+/* 履歴の編集フォームのボタンは固定せず、フォームの末尾に置く */
+.record-edit .record-edit__actions {
+  position: static;
+  margin: 12px 0 0;
+  padding: 0;
+  border-top: none;
+  background: transparent;
+}
 .tags {
   display: flex;
   flex-wrap: wrap;

@@ -98,6 +98,63 @@ describe('工程のコツ', () => {
   })
 })
 
+describe('記録の編集', () => {
+  const recordOnce = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.type(screen.getByRole('textbox', { name: 'メモ' }), '誤字メモ')
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+    await user.click(screen.getByRole('tab', { name: '施工履歴' }))
+  }
+
+  test('メモ・ケミカル・水・状態を直して保存できる。日付とメニューは変わらない', async () => {
+    const { user } = setup()
+    await recordOnce(user)
+    const before = within(screen.getByRole('article')).getByText('通常洗車')
+
+    await user.click(screen.getByRole('button', { name: /の記録を編集/ }))
+    const memo = screen.getByRole('textbox', { name: 'メモ' })
+    await user.clear(memo)
+    await user.type(memo, '直したメモ')
+    await user.type(screen.getByRole('textbox', { name: '使用ケミカル' }), 'ケミカルX')
+    await user.selectOptions(screen.getByRole('combobox', { name: '水の種類' }), 'pure')
+    await user.click(screen.getByRole('button', { name: '水シミ' }))
+    await user.click(screen.getByRole('button', { name: '保存' }))
+
+    const card = screen.getByRole('article')
+    expect(within(card).getByText('直したメモ')).toBeInTheDocument()
+    expect(within(card).getByText('使用: ケミカルX')).toBeInTheDocument()
+    expect(within(card).getByText('純水')).toBeInTheDocument()
+    expect(within(card).getByText('水シミ')).toBeInTheDocument()
+    expect(before).toBeInTheDocument()
+    expect(within(card).queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  test('キャンセルすると変更は反映されない', async () => {
+    const { user } = setup()
+    await recordOnce(user)
+
+    await user.click(screen.getByRole('button', { name: /の記録を編集/ }))
+    await user.type(screen.getByRole('textbox', { name: 'メモ' }), '追記')
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+    expect(within(screen.getByRole('article')).getByText('誤字メモ')).toBeInTheDocument()
+  })
+
+  test('編集した内容は再起動後も残る', async () => {
+    const first = setup()
+    await recordOnce(first.user)
+    await first.user.click(screen.getByRole('button', { name: /の記録を編集/ }))
+    await first.user.type(screen.getByRole('textbox', { name: 'メモ' }), '追記')
+    await first.user.click(screen.getByRole('button', { name: '保存' }))
+    first.unmount()
+
+    const second = setup()
+    await second.user.click(screen.getByRole('tab', { name: '施工履歴' }))
+
+    expect(within(screen.getByRole('article')).getByText('誤字メモ追記')).toBeInTheDocument()
+  })
+})
+
 describe('v1 ユーザーへの新機能の案内', () => {
   const seedLegacy = () =>
     localStorage.setItem(

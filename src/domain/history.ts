@@ -1,6 +1,6 @@
 import { findTemplate } from './catalog'
 import { completedStepNames } from './plan'
-import type { IdGenerator, MenuId, RecordDraft, SkippedStep, WashPlan, WashRecord, WashSettings } from './types'
+import type { ConditionTag, IdGenerator, MenuId, RecordDraft, SkippedStep, WashPlan, WashRecord, WashSettings, WaterType } from './types'
 
 export const MAX_NOTE_LENGTH = 500
 export const MAX_CHEMICALS_LENGTH = 100
@@ -42,6 +42,29 @@ export function addRecord(history: readonly WashRecord[], record: WashRecord): W
 
 export function removeRecord(history: readonly WashRecord[], recordId: string): WashRecord[] {
   return history.filter((record) => record.id !== recordId)
+}
+
+/** 記録のあとから直せる項目。日付・メニュー・工程は、予定の計算に関わるため含めない。 */
+export interface RecordEdit {
+  readonly note: string
+  readonly chemicals: string
+  readonly waterType: WaterType | null
+  readonly conditions: readonly ConditionTag[]
+}
+
+/** 指定した記録の編集可能な項目だけを置き換えた、新しい履歴を返す（元は変更しない）。 */
+export function updateRecord(history: readonly WashRecord[], recordId: string, edit: RecordEdit): WashRecord[] {
+  return history.map((record) =>
+    record.id !== recordId
+      ? record
+      : {
+          ...record,
+          note: edit.note.trim().slice(0, MAX_NOTE_LENGTH),
+          chemicals: edit.chemicals.trim().slice(0, MAX_CHEMICALS_LENGTH),
+          waterType: edit.waterType,
+          conditions: [...new Set(edit.conditions)],
+        },
+  )
 }
 
 const WASHED_ON_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/

@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { conditionLabel, menuName } from '../../domain/catalog'
+import type { RecordEdit } from '../../domain/history'
 import type { WashRecord, WaterType } from '../../domain/types'
+import { RecordEditForm } from './RecordEditForm'
 
 const WATER_LABEL: Record<WaterType, string> = { pure: '純水', tap: '水道水' }
 
 interface HistoryScreenProps {
   history: readonly WashRecord[]
   onRemove: (recordId: string) => void
+  onUpdate: (recordId: string, edit: RecordEdit) => void
 }
 
 const dateFormatter = new Intl.DateTimeFormat('ja-JP', {
@@ -26,7 +30,9 @@ function newestFirst(history: readonly WashRecord[]): WashRecord[] {
   return [...history].sort((a, b) => (time(a) === time(b) ? 0 : time(a) < time(b) ? 1 : -1))
 }
 
-export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
+export function HistoryScreen({ history, onRemove, onUpdate }: HistoryScreenProps) {
+  const [editingId, setEditingId] = useState<string | null>(null)
+
   const handleRemove = (record: WashRecord, label: string) => {
     if (window.confirm(`${label} の記録を削除しますか？`)) onRemove(record.id)
   }
@@ -46,6 +52,14 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
                 <article className="card">
                   <header className="card__header">
                     <time dateTime={record.washedAt}>{label}</time>
+                    <button
+                      type="button"
+                      className="button button--ghost card__edit"
+                      aria-label={`${label} の記録を編集`}
+                      onClick={() => setEditingId(record.id)}
+                    >
+                      編集
+                    </button>
                     <button
                       type="button"
                       className="icon-button"
@@ -81,8 +95,26 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
                   {record.skipped !== undefined && record.skipped.length > 0 && (
                     <p className="card__diff">未実施: {record.skipped.map((step) => step.name).join('、')}</p>
                   )}
-                  {record.chemicals && <p className="card__note">使用: {record.chemicals}</p>}
-                  {record.note && <p className="card__note">{record.note}</p>}
+                  {editingId === record.id ? (
+                    <RecordEditForm
+                      initial={{
+                        note: record.note,
+                        chemicals: record.chemicals,
+                        waterType: record.waterType,
+                        conditions: record.conditions,
+                      }}
+                      onSave={(edit) => {
+                        onUpdate(record.id, edit)
+                        setEditingId(null)
+                      }}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  ) : (
+                    <>
+                      {record.chemicals && <p className="card__note">使用: {record.chemicals}</p>}
+                      {record.note && <p className="card__note">{record.note}</p>}
+                    </>
+                  )}
                 </article>
               </li>
             )

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_DRAFT } from './draft'
-import { addRecord, createRecord, recentChemicals, removeRecord, resolveWashedAt } from './history'
+import { addRecord, createRecord, MAX_CHEMICALS_LENGTH, MAX_NOTE_LENGTH, recentChemicals, removeRecord, resolveWashedAt, updateRecord } from './history'
 import { DEFAULT_SETTINGS } from './settings'
 import type { RecordDraft, WashPlan, WashRecord } from './types'
 
@@ -180,5 +180,39 @@ describe('recentChemicals', () => {
 
   test('is empty without history', () => {
     expect(recentChemicals([], 3)).toEqual([])
+  })
+})
+
+describe('updateRecord', () => {
+  const base: WashRecord = { ...record('a', '2026-11-01T03:00:00.000Z'), menu: 'coating', plannedMenu: 'regular' }
+  const other = record('b', '2026-11-02T03:00:00.000Z')
+  const edit = { note: '  直したメモ  ', chemicals: ' ケミカルX ', waterType: 'pure' as const, conditions: ['water-spot' as const, 'water-spot' as const] }
+
+  test('updates only the editable fields of the target record, trimmed and deduplicated', () => {
+    const result = updateRecord([other, base], 'a', edit)
+
+    expect(result[1]).toMatchObject({ note: '直したメモ', chemicals: 'ケミカルX', waterType: 'pure', conditions: ['water-spot'] })
+    expect(result[1]).toMatchObject({ id: 'a', washedAt: base.washedAt, menu: 'coating', plannedMenu: 'regular', steps: base.steps })
+  })
+
+  test('leaves the other records and the original array untouched', () => {
+    const history = [other, base]
+
+    const result = updateRecord(history, 'a', edit)
+
+    expect(result[0]).toBe(other)
+    expect(history[1]).toBe(base)
+    expect(base.note).toBe('')
+  })
+
+  test('applies the length limits', () => {
+    const result = updateRecord([base], 'a', { ...edit, note: 'あ'.repeat(MAX_NOTE_LENGTH + 5), chemicals: 'い'.repeat(MAX_CHEMICALS_LENGTH + 5) })
+
+    expect(result[0].note).toHaveLength(MAX_NOTE_LENGTH)
+    expect(result[0].chemicals).toHaveLength(MAX_CHEMICALS_LENGTH)
+  })
+
+  test('does nothing for an unknown id', () => {
+    expect(updateRecord([base], 'zzz', edit)).toEqual([base])
   })
 })
