@@ -20,7 +20,7 @@ const progressText = () => screen.getByRole('progressbar').getAttribute('aria-va
 const WHEELS = 'タイヤ・ホイール洗浄'
 const SHAMPOO = 'シャンプー洗車'
 const DEFAULT_COUNT = STEP_TEMPLATES.filter(
-  (t) => t.menu === undefined && (t.slot === undefined || t.pureWater === false),
+  (t) => t.menu === undefined && (t.slot === undefined || t.pureWater === true),
 ).length
 
 describe('洗車プラン画面', () => {
@@ -35,7 +35,7 @@ describe('洗車プラン画面', () => {
       .map((li) => li.querySelector('.step__label')?.textContent)
       .filter(Boolean)
     expect(stepNames[0]).toBe(WHEELS)
-    expect(stepNames).toContain('すすぎ')
+    expect(stepNames).toContain('純水すすぎ')
     expect(progressText()).toBe('0')
   })
 
@@ -216,12 +216,12 @@ describe('初回の案内', () => {
 describe('純水設定', () => {
   test('切り替えるとすすぎ工程が入れ替わりチェック状態は維持される', async () => {
     const { user } = setup()
-    await user.click(screen.getByRole('checkbox', { name: 'すすぎ' }))
+    await user.click(screen.getByRole('checkbox', { name: '純水すすぎ' }))
 
     await user.click(screen.getByRole('checkbox', { name: /純水器を使う/ }))
 
-    expect(screen.queryByRole('checkbox', { name: 'すすぎ' })).not.toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: '純水すすぎ' })).toBeChecked()
+    expect(screen.queryByRole('checkbox', { name: '純水すすぎ' })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'すすぎ' })).toBeChecked()
   })
 
   test('設定は再起動後も残る', async () => {
@@ -231,8 +231,8 @@ describe('純水設定', () => {
 
     setup()
 
-    expect(screen.getByRole('checkbox', { name: /純水器を使う/ })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: '純水すすぎ' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: /純水器を使う/ })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'すすぎ' })).toBeInTheDocument()
   })
 })
 
@@ -291,7 +291,7 @@ describe('施工の記録と履歴画面', () => {
     await user.click(screen.getByRole('button', { name: '施工を記録' }))
 
     await user.click(screen.getByRole('tab', { name: '施工履歴' }))
-    expect(within(screen.getByRole('article')).getByText('水道水')).toBeInTheDocument()
+    expect(within(screen.getByRole('article')).getByText('純水')).toBeInTheDocument()
   })
 
   test('履歴が空のときは案内を表示する', async () => {
@@ -764,7 +764,7 @@ describe('進捗', () => {
     const { user } = setup()
     expect(screen.getByText('0 / 5 工程')).toBeInTheDocument()
 
-    for (const name of [WHEELS, '予洗い（砂を流す）', SHAMPOO, 'すすぎ', '拭き上げ＋コーティング']) {
+    for (const name of [WHEELS, '予洗い（砂を流す）', SHAMPOO, '純水すすぎ', '拭き上げ＋コーティング']) {
       await user.click(screen.getByRole('checkbox', { name }))
     }
 

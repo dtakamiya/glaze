@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_DRAFT, toggleCondition } from './draft'
-import { DEFAULT_SETTINGS, setPureWater } from './settings'
+import { setPureWater } from './settings'
 
 describe('toggleCondition', () => {
   test('adds a tag that is not selected without mutating the draft', () => {
@@ -19,9 +19,11 @@ describe('toggleCondition', () => {
 
 describe('setPureWater', () => {
   test('returns a new settings object', () => {
-    const next = setPureWater(DEFAULT_SETTINGS, true)
+    const tap = { hasPureWater: false }
+
+    const next = setPureWater(tap, true)
 
     expect(next).toEqual({ hasPureWater: true })
-    expect(DEFAULT_SETTINGS.hasPureWater).toBe(false)
+    expect(tap.hasPureWater).toBe(false)
   })
 })

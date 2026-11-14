@@ -190,12 +190,12 @@ describe('history storage', () => {
 })
 
 describe('settings and draft storage', () => {
-  test('defaults to no pure water and round-trips settings', () => {
-    expect(loadSettings()).toEqual({ hasPureWater: false })
-
-    saveSettings({ hasPureWater: true })
-
+  test('defaults to pure water and round-trips settings', () => {
     expect(loadSettings()).toEqual({ hasPureWater: true })
+
+    saveSettings({ hasPureWater: false })
+
+    expect(loadSettings()).toEqual({ hasPureWater: false })
     expect(localStorage.getItem(SETTINGS_KEY)).not.toBeNull()
   })
 

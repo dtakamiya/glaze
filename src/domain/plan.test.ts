@@ -19,11 +19,15 @@ const fixedId = (() => {
   return () => `id-${++n}`
 })()
 
-const tapPlan = () => createDefaultPlan(DEFAULT_SETTINGS, fixedId)
+const tapPlan = () => createDefaultPlan({ hasPureWater: false }, fixedId)
 const purePlan = () => createDefaultPlan({ hasPureWater: true }, fixedId)
 
 describe('createDefaultPlan', () => {
-  test('lists wheels first and uses the tap rinse by default', () => {
+  test('uses the pure-water rinse by default', () => {
+    expect(createDefaultPlan(DEFAULT_SETTINGS, fixedId).steps.map((s) => s.templateId)).toContain('rinse-pure')
+  })
+
+  test('lists wheels first and uses the tap rinse without a pure-water device', () => {
     const plan = tapPlan()
 
     expect(plan.steps.map((s) => s.templateId)).toEqual([
