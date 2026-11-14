@@ -129,6 +129,9 @@ export function PlanScreen({
         {plan.steps.map((step) => {
           const template = findTemplate(step.templateId)
           const tips = template?.tips ?? []
+          const avoid = template?.avoid ?? []
+          const why = template?.why ?? []
+          const hasGuidance = tips.length + avoid.length + why.length > 0
           const tipOpen = openTipIds.includes(step.id)
           const panelId = `tip-${step.id}`
           return (
@@ -139,7 +142,7 @@ export function PlanScreen({
               </label>
               {template !== undefined && <span className="step__minutes">{template.minutes}分</span>}
               {template?.optional && <span className="badge">任意</span>}
-              {tips.length > 0 && (
+              {hasGuidance && (
                 <TipToggle
                   stepName={step.name}
                   expanded={tipOpen}
@@ -155,7 +158,7 @@ export function PlanScreen({
               >
                 ×
               </button>
-              {tipOpen && <TipPanel id={panelId} tips={tips} />}
+              {tipOpen && <TipPanel id={panelId} tips={tips} avoid={avoid} why={why} />}
             </li>
           )
         })}

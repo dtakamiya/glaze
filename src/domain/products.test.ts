@@ -59,3 +59,20 @@ describe('toggleItem', () => {
     expect(toggleItem(`${text}、スリークシャンプー`, 'スリークシャンプー', 100)).toBe(text)
   })
 })
+
+describe('safety notes on strong chemicals', () => {
+  const noteOf = (name: string) => PRODUCTS.find((p) => p.name === name)?.note ?? ''
+
+  test('tells to wear gloves with the mineral remover and to keep it off glass', () => {
+    expect(noteOf('ミネラルリムーバー')).toContain('手袋')
+    expect(noteOf('ミネラルリムーバー')).toContain('ガラス')
+  })
+
+  test('lists the wheels the acid wheel cleaner cannot be used on', () => {
+    const note = noteOf('アシッドホイールクレンザー')
+
+    for (const keyword of ['高輝度', '切削', 'アルマイト']) {
+      expect(note).toContain(keyword)
+    }
+  })
+})

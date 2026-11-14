@@ -96,6 +96,16 @@ describe('工程のコツ', () => {
 
     expect(screen.queryByText(/音が鳴らない力加減/)).not.toBeInTheDocument()
   })
+
+  test('「やってはいけないこと」と「理由」をコツとは別の見出しで出す', async () => {
+    const { user } = setup()
+
+    await user.click(screen.getByRole('button', { name: `${WHEELS} のコツ` }))
+
+    expect(screen.getByText('やってはいけないこと')).toBeVisible()
+    expect(screen.getByText(/ブレーキディスク/)).toBeVisible()
+    expect(screen.getByText('理由')).toBeVisible()
+  })
 })
 
 describe('記録の編集', () => {
