@@ -17,6 +17,15 @@ const dateFormatter = new Intl.DateTimeFormat('ja-JP', {
   minute: '2-digit',
 })
 
+/** 新しい順。保存順に依存しない（元の配列は変更しない）。日時が不正な記録は末尾に残す。 */
+function newestFirst(history: readonly WashRecord[]): WashRecord[] {
+  const time = (record: WashRecord) => {
+    const value = new Date(record.washedAt).getTime()
+    return Number.isNaN(value) ? Number.NEGATIVE_INFINITY : value
+  }
+  return [...history].sort((a, b) => (time(a) === time(b) ? 0 : time(a) < time(b) ? 1 : -1))
+}
+
 export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
   const handleRemove = (record: WashRecord, label: string) => {
     if (window.confirm(`${label} の記録を削除しますか？`)) onRemove(record.id)
@@ -30,7 +39,7 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
         <p className="empty">まだ施工記録がありません</p>
       ) : (
         <ol className="history">
-          {history.map((record) => {
+          {newestFirst(history).map((record) => {
             const label = dateFormatter.format(new Date(record.washedAt))
             return (
               <li key={record.id}>

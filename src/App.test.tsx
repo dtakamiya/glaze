@@ -422,7 +422,7 @@ describe('実績にもとづく次回提案', () => {
     expect(screen.queryByText('前回、水シミを記録したため')).not.toBeInTheDocument()
   })
 
-  test('鳥フンと未実施の必須工程は、情報のみの注意として出る', async () => {
+  test('鳥フンは情報のみの注意として出る。1回だけの未実施工程は注意に出ない', async () => {
     const { user } = setup()
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))
     await user.click(screen.getByRole('button', { name: '鳥フン' }))
@@ -431,8 +431,21 @@ describe('実績にもとづく次回提案', () => {
     await openSchedule(user)
 
     expect(screen.getByText(/前回、鳥フンを記録しました。次回は「虫・鳥フン処理」を忘れずに/)).toBeInTheDocument()
-    expect(screen.getByText(/前回未実施: .*シャンプー洗車/)).toBeInTheDocument()
+    expect(screen.queryByText(/2回連続で未実施/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '採用する' })).not.toBeInTheDocument()
+  })
+
+  test('必須工程を2回連続で未実施にすると、注意が出る', async () => {
+    const { user } = setup()
+    for (let i = 0; i < 2; i++) {
+      await user.click(screen.getByRole('tab', { name: '洗車プラン' }))
+      await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+      await user.click(screen.getByRole('button', { name: '施工を記録' }))
+    }
+
+    await openSchedule(user)
+
+    expect(screen.getByText(/2回連続で未実施: .*シャンプー洗車/)).toBeInTheDocument()
   })
 
   test('履歴に予定との差（予定メニューと未実施の工程）が出る', async () => {

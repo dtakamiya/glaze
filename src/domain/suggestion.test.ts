@@ -69,16 +69,54 @@ describe('suggestNext', () => {
     expect(note?.reason).toContain('鳥フン・タール')
   })
 
-  test('adds a note listing the required steps skipped last time', () => {
-    const history = [record(daysAgo(3), 'regular', { skipped: [{ name: 'すすぎ' }, { name: '自作' }] })]
+  test('does not warn about a step skipped only once', () => {
+    const history = [record(daysAgo(10), 'regular'), record(daysAgo(3), 'regular', { skipped: [{ name: 'すすぎ' }] })]
 
-    expect(suggestNext(history, now).find((s) => s.id === 'note:skipped')?.reason).toBe('前回未実施: すすぎ、自作')
+    expect(suggestNext(history, now).map((s) => s.id)).not.toContain('note:skipped')
+  })
+
+  test('warns only about steps skipped in the last two records in a row', () => {
+    const history = [
+      record(daysAgo(10), 'regular', { skipped: [{ name: 'すすぎ' }, { name: '古い' }] }),
+      record(daysAgo(3), 'regular', { skipped: [{ name: 'すすぎ' }, { name: '自作' }] }),
+    ]
+
+    expect(suggestNext(history, now).find((s) => s.id === 'note:skipped')?.reason).toBe('2回連続で未実施: すすぎ')
+  })
+
+  test('adds a prevention note when water spots were recorded in 2 of the last 3 washes', () => {
+    const history = [
+      record(daysAgo(20), 'regular', { conditions: ['water-spot'] }),
+      record(daysAgo(10), 'regular'),
+      record(daysAgo(3), 'regular', { conditions: ['water-spot'] }),
+    ]
+
+    const note = suggestNext(history, now).find((s) => s.id === 'note:water-spot-prevention')
+
+    expect(note?.kind).toBe('note')
+    expect(note?.reason).toContain('純水')
+    expect(note?.reason).toContain('拭き上げ')
+  })
+
+  test('does not add the prevention note for a single water spot or old ones', () => {
+    const single = [record(daysAgo(10), 'regular'), record(daysAgo(3), 'regular', { conditions: ['water-spot'] })]
+    const old = [
+      record(daysAgo(40), 'regular', { conditions: ['water-spot'] }),
+      record(daysAgo(30), 'regular', { conditions: ['water-spot'] }),
+      record(daysAgo(20), 'regular'),
+      record(daysAgo(10), 'regular'),
+      record(daysAgo(3), 'regular'),
+    ]
+
+    expect(suggestNext(single, now).map((s) => s.id)).not.toContain('note:water-spot-prevention')
+    expect(suggestNext(old, now).map((s) => s.id)).not.toContain('note:water-spot-prevention')
   })
 
   test('only looks at the latest record for notes, regardless of order', () => {
     const history = [
       record(daysAgo(3), 'regular', { conditions: ['bug'] }),
       record(daysAgo(20), 'regular', { skipped: [{ name: '古い未実施' }] }),
+      record(daysAgo(30), 'regular', { skipped: [{ name: '古い未実施' }] }),
     ]
 
     const ids = suggestNext(history, now).map((s) => s.id)

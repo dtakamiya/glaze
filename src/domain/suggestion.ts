@@ -36,7 +36,25 @@ function menuCandidates(latest: WashRecord): Suggestion[] {
   return result
 }
 
-function notes(latest: WashRecord): Suggestion[] {
+/** 水シミが慢性とみなす: 直近 N 回のうち M 回以上に水シミの記録がある。 */
+const SPOT_WINDOW = 3
+const SPOT_MIN_COUNT = 2
+
+function isChronicWaterSpot(ordered: readonly WashRecord[]): boolean {
+  const recent = ordered.slice(-SPOT_WINDOW)
+  return recent.filter((record) => record.conditions.includes('water-spot')).length >= SPOT_MIN_COUNT
+}
+
+/** 直近 2 回の記録で続けて未実施だった工程名（前の記録が無ければ空）。 */
+function repeatedSkips(latest: WashRecord, previous: WashRecord | undefined): string[] {
+  if (previous === undefined) return []
+  const before = new Set((previous.skipped ?? []).map((step) => step.name))
+  return (latest.skipped ?? []).map((step) => step.name).filter((name) => before.has(name))
+}
+
+function notes(ordered: readonly WashRecord[]): Suggestion[] {
+  const latest = ordered[ordered.length - 1]
+  const previous = ordered.length >= 2 ? ordered[ordered.length - 2] : undefined
   const result: Suggestion[] = []
   const dirty = latest.conditions.filter((tag) => BUG_BIRD_TAGS.includes(tag))
   if (dirty.length > 0) {
@@ -46,12 +64,15 @@ function notes(latest: WashRecord): Suggestion[] {
       reason: `前回、${labels(dirty)}を記録しました。次回は「虫・鳥フン処理」を忘れずに`,
     })
   }
-  const skipped = latest.skipped ?? []
-  if (skipped.length > 0) {
+  const repeated = repeatedSkips(latest, previous)
+  if (repeated.length > 0) {
+    result.push({ id: 'note:skipped', kind: 'note', reason: `2回連続で未実施: ${repeated.join('、')}` })
+  }
+  if (isChronicWaterSpot(ordered)) {
     result.push({
-      id: 'note:skipped',
+      id: 'note:water-spot-prevention',
       kind: 'note',
-      reason: `前回未実施: ${skipped.map((step) => step.name).join('、')}`,
+      reason: '水シミが続いています。純水の洗車場を使う、仕上げの拭き上げを早めに丁寧に行う、で予防できます',
     })
   }
   return result
@@ -69,7 +90,7 @@ export function suggestNext(history: readonly WashRecord[], now: Date): Suggesti
 
   const planned = nextMenu(history, now)
   const menuChanges = menuCandidates(latest).filter((s) => s.menu !== planned)
-  return [...menuChanges, ...notes(latest)]
+  return [...menuChanges, ...notes(ordered)]
 }
 
 /**
