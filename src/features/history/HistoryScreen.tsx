@@ -1,4 +1,7 @@
-import type { WashRecord } from '../../domain/types'
+import { conditionLabel } from '../../domain/catalog'
+import type { WashRecord, WaterType } from '../../domain/types'
+
+const WATER_LABEL: Record<WaterType, string> = { pure: '純水', tap: '水道水' }
 
 interface HistoryScreenProps {
   history: readonly WashRecord[]
@@ -50,6 +53,17 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
                       </li>
                     ))}
                   </ul>
+                  <ul className="tags tags--meta">
+                    {record.waterType !== null && (
+                      <li className="tag tag--meta">{WATER_LABEL[record.waterType]}</li>
+                    )}
+                    {record.conditions.map((value) => (
+                      <li key={value} className="tag tag--condition">
+                        {conditionLabel(value)}
+                      </li>
+                    ))}
+                  </ul>
+                  {record.chemicals && <p className="card__note">使用: {record.chemicals}</p>}
                   {record.note && <p className="card__note">{record.note}</p>}
                 </article>
               </li>

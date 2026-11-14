@@ -1,30 +1,43 @@
 import { useState, type FormEvent } from 'react'
-import { MAX_NOTE_LENGTH } from '../../domain/history'
+import { findTemplate } from '../../domain/catalog'
 import { MAX_STEP_NAME_LENGTH } from '../../domain/plan'
-import type { WashPlan } from '../../domain/types'
+import type { RecordDraft, WashPlan, WashSettings } from '../../domain/types'
+import { RecordForm } from './RecordForm'
+import { ReminderBanner } from './ReminderBanner'
+import { TipPanel, TipToggle } from './StepTip'
 
 interface PlanScreenProps {
   plan: WashPlan
-  note: string
-  onNoteChange: (note: string) => void
+  settings: WashSettings
+  draft: RecordDraft
+  /** 最後の洗車からの日数（履歴なしは null） */
+  daysSinceLastWash: number | null
+  onDraftChange: (draft: RecordDraft) => void
+  onPureWaterChange: (hasPureWater: boolean) => void
   onToggle: (stepId: string) => void
   onAdd: (name: string) => void
   onRemove: (stepId: string) => void
   onReset: () => void
+  onRestoreDefault: () => void
   onRecord: () => void
 }
 
 export function PlanScreen({
   plan,
-  note,
-  onNoteChange,
+  settings,
+  draft,
+  daysSinceLastWash,
+  onDraftChange,
+  onPureWaterChange,
   onToggle,
   onAdd,
   onRemove,
   onReset,
+  onRestoreDefault,
   onRecord,
 }: PlanScreenProps) {
   const [newStep, setNewStep] = useState('')
+  const [openTipIds, setOpenTipIds] = useState<readonly string[]>([])
   const doneCount = plan.steps.filter((s) => s.done).length
   const total = plan.steps.length
 
@@ -34,9 +47,29 @@ export function PlanScreen({
     setNewStep('')
   }
 
+  const toggleTip = (stepId: string) =>
+    setOpenTipIds((ids) => (ids.includes(stepId) ? ids.filter((id) => id !== stepId) : [...ids, stepId]))
+
+  const handleRestoreDefault = () => {
+    if (window.confirm('工程を初期プランに戻しますか？追加・削除・並び替えした内容とチェック状態は失われます（施工履歴は残ります）。')) {
+      onRestoreDefault()
+    }
+  }
+
   return (
     <section className="screen" aria-labelledby="plan-title">
       <h1 id="plan-title">洗車プラン</h1>
+
+      <ReminderBanner days={daysSinceLastWash} />
+
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={settings.hasPureWater}
+          onChange={(e) => onPureWaterChange(e.target.checked)}
+        />
+        <span>純水器を使う（すすぎの工程が切り替わります）</span>
+      </label>
 
       <div className="progress">
         <div
@@ -55,22 +88,38 @@ export function PlanScreen({
       </div>
 
       <ul className="steps">
-        {plan.steps.map((step) => (
-          <li key={step.id} className={step.done ? 'step step--done' : 'step'}>
-            <label className="step__label">
-              <input type="checkbox" checked={step.done} onChange={() => onToggle(step.id)} />
-              <span>{step.name}</span>
-            </label>
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={`${step.name} を削除`}
-              onClick={() => onRemove(step.id)}
-            >
-              ×
-            </button>
-          </li>
-        ))}
+        {plan.steps.map((step) => {
+          const template = findTemplate(step.templateId)
+          const tips = template?.tips ?? []
+          const tipOpen = openTipIds.includes(step.id)
+          const panelId = `tip-${step.id}`
+          return (
+            <li key={step.id} className={step.done ? 'step step--done' : 'step'}>
+              <label className="step__label">
+                <input type="checkbox" checked={step.done} onChange={() => onToggle(step.id)} />
+                <span>{step.name}</span>
+              </label>
+              {template?.optional && <span className="badge">任意</span>}
+              {tips.length > 0 && (
+                <TipToggle
+                  stepName={step.name}
+                  expanded={tipOpen}
+                  panelId={panelId}
+                  onToggle={() => toggleTip(step.id)}
+                />
+              )}
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={`${step.name} を削除`}
+                onClick={() => onRemove(step.id)}
+              >
+                ×
+              </button>
+              {tipOpen && <TipPanel id={panelId} tips={tips} />}
+            </li>
+          )
+        })}
       </ul>
 
       <form className="add-step" onSubmit={handleAdd}>
@@ -87,26 +136,18 @@ export function PlanScreen({
         </button>
       </form>
 
-      <div className="record">
-        <label className="field">
-          <span>メモ</span>
-          <textarea
-            rows={2}
-            placeholder="天気・使ったケミカルなど"
-            maxLength={MAX_NOTE_LENGTH}
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-          />
-        </label>
-        <div className="record__actions">
-          <button type="button" className="button button--ghost" onClick={onReset} disabled={doneCount === 0}>
-            チェックをリセット
-          </button>
-          <button type="button" className="button" onClick={onRecord} disabled={doneCount === 0}>
-            施工を記録
-          </button>
-        </div>
-      </div>
+      <RecordForm
+        draft={draft}
+        settings={settings}
+        canRecord={doneCount > 0}
+        onDraftChange={onDraftChange}
+        onReset={onReset}
+        onRecord={onRecord}
+      />
+
+      <button type="button" className="button button--ghost restore" onClick={handleRestoreDefault}>
+        初期プランに戻す
+      </button>
     </section>
   )
 }
