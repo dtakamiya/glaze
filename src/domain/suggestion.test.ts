@@ -44,10 +44,11 @@ describe('suggestNext', () => {
   })
 
   test('does not suggest the menu that is already planned for the day', () => {
-    // 最初の記録から 42 日たつと、予定が水シミ・水アカ除去になる
+    // 最初の記録から 90 日たつと、予定が水シミ・水アカ除去になる（フルオリン・コーティングは最近済み）
     const history = [
-      record(daysAgo(43), 'regular'),
-      record(daysAgo(15), 'coating'),
+      record(daysAgo(91), 'regular'),
+      record(daysAgo(20), 'fluorin'),
+      record(daysAgo(10), 'coating'),
       record(daysAgo(3), 'regular', { conditions: ['water-spot'] }),
     ]
 

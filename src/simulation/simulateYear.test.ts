@@ -42,8 +42,9 @@ describe('提案をすべて無視しても', () => {
   const ignoring = simulatePersona({ ...TAKAHASHI, adoptRate: 0, dismissRate: 0 })
   const summary = summarize(ignoring)
 
-  test('ローテーションに従って水シミ除去・コーティング補充が定期的に入る', () => {
-    expect(summary.menuCounts.mineral).toBeGreaterThanOrEqual(4)
+  test('ローテーションに従って水シミ除去（年 3〜4 回）・コーティング補充が定期的に入る', () => {
+    expect(summary.menuCounts.mineral).toBeGreaterThanOrEqual(3)
+    expect(summary.menuCounts.mineral).toBeLessThanOrEqual(5)
     expect(summary.menuCounts.coating).toBeGreaterThanOrEqual(4)
     expect(summary.deviations).toBe(0)
   })
@@ -56,19 +57,19 @@ describe('洗車が月 1 回のペルソナ（間隔 4 週）', () => {
     expect(summary.overdueWeeks).toBeLessThan(summary.weeks * 0.3)
   })
 
-  test('間が空いても水シミ除去・フルオリンセラムは 5 か月以内に入る', () => {
-    // 4 週ごとの洗車では水シミ除去とフルオリンセラムが交互になり、それぞれ 8 週ごとになる
+  test('間が空いても水シミ除去は 6 か月以内、フルオリンセラムは 5 か月以内に入る', () => {
+    // 動画の目安は、水シミ・鉄粉まで落とす洗車が年 2〜3 回。4 週ごとの洗車では先に来たメニューが優先され、水シミ除去は 5〜6 か月おきになる
     const summary = summarize(simulatePersona(NAKAMURA))
-    expect(summary.mineralGapMax).toBeLessThanOrEqual(150)
+    expect(summary.mineralGapMax).toBeLessThanOrEqual(190)
     expect(summary.fluorinGapMax).toBeLessThanOrEqual(150)
   })
 })
 
 describe('毎週洗うペルソナ', () => {
-  test('洗う回数が多くても、コーティングは 2 週ごと（年 26 回以下）・水シミ除去は 4 週ごと（年 13 回以下）に収まる', () => {
+  test('洗う回数が多くても、コーティングは 2 週ごと（年 26 回以下）・水シミ除去は 90 日ごと（年 5 回以下）に収まる', () => {
     const { menuCounts } = summarize(simulatePersona(KOBAYASHI))
 
-    expect(menuCounts.mineral).toBeLessThanOrEqual(13)
+    expect(menuCounts.mineral).toBeLessThanOrEqual(5)
     expect(menuCounts.coating).toBeLessThanOrEqual(26)
   })
 

@@ -326,11 +326,13 @@ export interface MenuCycle {
 
 /**
  * 特別メニューは「洗車の回数」ではなく「経過日数」で決める（頻繁に洗う人に増えすぎない・間が空く人に抜けない）。
- * コーティング補充（ナノダイヤモンドトナー）は 2 週に 1 回、水シミ・水アカ除去とフルオリンセラム施工は 4 週に 1 回。
+ * コーティング補充（ナノダイヤモンドトナー）は 2 週に 1 回、フルオリンセラム施工は 4 週に 1 回、水シミ・水アカ除去は 90 日（約 3 か月）に 1 回。
+ * 水シミ除去は、純水や乾く前の拭き上げで洗っていればほぼ出番がなく、鉄粉・水シミまで落とす洗車は年 2〜3 回が動画の目安のため、他より間隔を長くしている。
+ * 水シミ・鉄粉が目立つときは、状態タグ → 提案（`suggestion.ts`）で前倒しできる。
  */
 export const MENU_CYCLES: Readonly<Record<SpecialMenuId, MenuCycle>> = {
   coating: { firstDays: 14, everyDays: 14 },
-  mineral: { firstDays: 28, everyDays: 28 },
+  mineral: { firstDays: 90, everyDays: 90 },
   fluorin: { firstDays: 28, everyDays: 28 },
 }
 

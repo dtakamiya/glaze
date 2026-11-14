@@ -655,16 +655,17 @@ describe('過去日で記録するときの予定メニュー', () => {
     localStorage.setItem(
       'glaze:v2:history',
       JSON.stringify([
-        { id: 'r', washedAt: daysAgo(45).toISOString(), steps: [], note: '', waterType: null, chemicals: '', conditions: [], menu: 'regular' },
+        { id: 'r', washedAt: daysAgo(95).toISOString(), steps: [], note: '', waterType: null, chemicals: '', conditions: [], menu: 'regular' },
+        { id: 'f', washedAt: daysAgo(20).toISOString(), steps: [], note: '', waterType: null, chemicals: '', conditions: [], menu: 'fluorin' },
         { id: 'c', washedAt: daysAgo(10).toISOString(), steps: [], note: '', waterType: null, chemicals: '', conditions: [], menu: 'coating' },
       ]),
     )
     setup()
-    // 最初の記録から 45 日・10 日前にコーティング済み → 今日の予定は水シミ・水アカ除去（17 日前から周期が来ている）
+    // 最初の記録から 95 日・20 日前にフルオリン・10 日前にコーティング済み → 今日の予定は水シミ・水アカ除去（5 日前から周期が来ている）
     expect(screen.getByRole('combobox', { name: '今回のメニュー' })).toHaveValue('mineral')
     expect(screen.getByRole('checkbox', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('洗車日'), { target: { value: value(daysAgo(44)) } })
+    fireEvent.change(screen.getByLabelText('洗車日'), { target: { value: value(daysAgo(94)) } })
 
     // その日は最初の記録から 1 日後（新しい記録は数えない） → 通常洗車
     expect(screen.getByRole('combobox', { name: '今回のメニュー' })).toHaveValue('regular')
@@ -794,9 +795,11 @@ describe('洗車計画タブ', () => {
     expect(items).toHaveLength(5)
     expect(within(items[0]).getByText('次回')).toBeInTheDocument()
     expect(within(items[0]).getByRole('heading', { name: '通常洗車' })).toBeInTheDocument()
-    // 特別メニューは洗車の回数ではなく日数で入る（最初の記録から 2 週 → コーティング補充、4 週 → 水シミ・水アカ除去）
+    // 特別メニューは洗車の回数ではなく日数で入る（最初の記録から 2 週 → コーティング補充、4 週 → フルオリンセラム施工）
     expect(within(items[1]).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
-    expect(within(items[2]).getByRole('heading', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
+    expect(within(items[2]).getByRole('heading', { name: 'フルオリンセラム施工' })).toBeInTheDocument()
+    // 水シミ・水アカ除去は 90 日に 1 回なので、8 週先までには入らない
+    expect(screen.queryByRole('heading', { name: '水シミ・水アカ除去' })).not.toBeInTheDocument()
   })
 
   test('前回の洗車（日付とメニュー）が出る。履歴が無ければ出ない', async () => {
@@ -836,7 +839,7 @@ describe('洗車計画タブ', () => {
     expect(screen.getByRole('checkbox', { name: WHEELS })).toBeChecked()
   })
 
-  test('記録すると次回は 2 週間後のコーティング補充で、その次の回に水シミ・水アカ除去が入る', async () => {
+  test('記録すると次回は 2 週間後のコーティング補充で、その次の回にフルオリンセラム施工が入る', async () => {
     const { user } = setup()
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))
     await user.click(screen.getByRole('button', { name: '施工を記録' }))
@@ -844,9 +847,9 @@ describe('洗車計画タブ', () => {
     await openSchedule(user)
 
     const [next, second] = screen.getAllByRole('article')
-    // 最初の記録（今日）から 2 週後がコーティング補充、4 週後が水シミ・水アカ除去
+    // 最初の記録（今日）から 2 週後がコーティング補充、4 週後がフルオリンセラム施工
     expect(within(next).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
-    expect(within(second).getByRole('heading', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
+    expect(within(second).getByRole('heading', { name: 'フルオリンセラム施工' })).toBeInTheDocument()
   })
 
   test('記録フォームの既定は予定のメニューで、別のメニューを選ぶと履歴とローテーションに反映される', async () => {
