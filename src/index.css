@@ -188,9 +188,16 @@ textarea {
 }
 
 .record__actions {
+  /* 長いフォームでも「施工を記録」を探さずに押せるよう、下部タブの上に固定する */
+  position: sticky;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  z-index: 1;
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin: 12px -16px 0;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
 }
 .record__actions .button {
   flex: 1;
@@ -240,6 +247,23 @@ textarea {
   align-items: center;
   justify-content: space-between;
   font-weight: 600;
+}
+.card__edit {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.record-edit {
+  margin-top: 8px;
+}
+/* 履歴の編集フォームのボタンは固定せず、フォームの末尾に置く */
+.record-edit .record-edit__actions {
+  position: static;
+  margin: 12px 0 0;
+  padding: 0;
+  border-top: none;
+  background: transparent;
 }
 .tags {
   display: flex;
@@ -296,4 +320,345 @@ textarea {
 .tabbar__icon {
   font-size: 1.25rem;
   line-height: 1;
+}
+
+/* reminder */
+.reminder {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+}
+.reminder--due {
+  background: #fff4d6;
+  color: #7a5400;
+}
+.reminder--overdue {
+  background: #fdecea;
+  color: #8a1c13;
+}
+@media (prefers-color-scheme: dark) {
+  .reminder--due {
+    background: #3a2f10;
+    color: #f0d48a;
+  }
+  .reminder--overdue {
+    background: #3d1a17;
+    color: #f5b7b0;
+  }
+}
+
+/* pure water toggle */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.hint {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.guide {
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.guide__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.guide__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.guide .button {
+  margin-top: 12px;
+}
+
+.schedule__last {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+/* step extras */
+.step {
+  flex-wrap: wrap;
+}
+.timing {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.step__minutes {
+  margin-right: 8px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.badge {
+  font-size: 0.75rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.tip-toggle {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tip-toggle[aria-expanded='true'] {
+  font-weight: 600;
+}
+.tip {
+  flex-basis: 100%;
+  padding: 0 16px 12px 50px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.tip ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.tip li + li {
+  margin-top: 4px;
+}
+
+/* record form extras */
+.record {
+  /* 子の sticky が画面全体を範囲にできるよう、自身の箱は作らない */
+  display: contents;
+}
+.record .field {
+  margin-bottom: 12px;
+}
+.field select,
+.field input[type='text'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: 1rem;
+}
+fieldset.field {
+  border: none;
+  padding: 0;
+  margin-inline: 0;
+  min-width: 0;
+}
+fieldset.field legend {
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chips legend {
+  flex-basis: 100%;
+}
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+.chips--inline {
+  margin-bottom: 12px;
+}
+.chips--inline .chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 600;
+}
+.restore {
+  width: 100%;
+  margin-top: 24px;
+}
+
+/* history extras */
+.tags:empty {
+  display: none;
+}
+.tags--meta {
+  margin-top: 6px;
+}
+.tag--meta {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
+.tag--condition {
+  background: #fff4d6;
+  color: #7a5400;
+}
+@media (prefers-color-scheme: dark) {
+  .tag--condition {
+    background: #3a2f10;
+    color: #f0d48a;
+  }
+}
+
+/* schedule */
+.schedule {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.schedule-prefs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.schedule-prefs .field {
+  margin-bottom: 0;
+}
+.card--next {
+  border-color: var(--color-primary);
+}
+.badge--next {
+  margin-right: 12px;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.schedule__overdue {
+  margin: 0 12px 0 0;
+  font-size: 0.875rem;
+  color: #8a1c13;
+}
+@media (prefers-color-scheme: dark) {
+  .schedule__overdue {
+    color: #f5b7b0;
+  }
+}
+.schedule__menu {
+  margin: 4px 0 2px;
+  font-size: 1.0625rem;
+}
+.schedule__summary {
+  margin: 0 12px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.schedule__note {
+  margin: 16px 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+.tag--menu {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+/* record feedback / date */
+.toast {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  font-weight: 600;
+}
+.field input[type='date'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: 1rem;
+}
+
+/* suggestions */
+.suggestions {
+  margin-bottom: 16px;
+}
+.suggestions__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.suggestions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.suggestion {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.suggestion--menu {
+  border-color: var(--color-primary);
+}
+.suggestion__text {
+  margin: 0;
+}
+.suggestion__reason {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.suggestion__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.suggestion__actions .button {
+  flex: 1;
+  white-space: nowrap;
+}
+.schedule__reset {
+  margin-top: 8px;
+  width: calc(100% - 12px);
+}
+.card__diff {
+  margin: 6px 12px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
 }

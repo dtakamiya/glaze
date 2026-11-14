@@ -29,12 +29,21 @@
 ```
 src/
   domain/      純粋関数とモデル（React・ストレージ非依存）
-    types.ts     WashStep / WashPlan / WashRecord
-    plan.ts      工程の追加・削除・チェック・リセット
+    types.ts     WashStep / WashPlan / WashRecord / WashSettings / RecordDraft
+    catalog.ts   標準工程テンプレート（コツ・任意・純水対応）と状態タグの定義元
+    plan.ts      工程の追加・削除・チェック・リセット・純水切り替え
     history.ts   施工記録の作成・追加・削除
+    draft.ts     入力中の記録（メモ・水・ケミカル・状態タグ）
+    settings.ts  設定（純水器の有無）
+    reminder.ts  前回洗車からの日数と通知レベル、日付ヘルパー（保存せず履歴から算出）
+    suggestion.ts 記録の内容（状態タグ・未実施の必須工程）から次回の提案を算出（保存せず都度算出・ルールベース）
+    schedule.ts  洗車計画（日付ごとの予定メニューと、先の予定日の算出。保存せず履歴から算出）
   storage/     localStorage アダプタ（zod で検証）
+    schemas.ts     v2 スキーマと凍結済み v1 スキーマ
+    migrations.ts  v1 → v2 の純関数
+    storage.ts     load/save（v2 → v1 移行 → 初期値の順に読む）
   hooks/       usePersistentState（読み込み + 変更時保存）
-  features/    画面単位（plan/, history/）
+  features/    画面単位（plan/, schedule/, history/）
   components/  共通 UI（TabBar）
   lib/         汎用ユーティリティ（id 生成）
   App.tsx      状態の保持と画面の結線
@@ -45,8 +54,19 @@ src/
 - **イミュータブル**: ドメイン関数は常に新しいオブジェクトを返す。state を直接書き換えない。
 - **履歴は工程名をスナップショット保存**する（プランの工程 ID を参照しない）。プランを編集しても過去の記録は変わらない。
 - **ストレージは外部入力扱い**: 読み込み時に zod で検証し、不正・破損時は初期値にフォールバックして `console.warn` で記録する。握りつぶさない。
-- **スキーマ変更時はキーのバージョンを上げる**（`glaze:v1:*` → `glaze:v2:*`）と同時に移行処理を追加する。
-- 入力長の上限はドメイン定数（`MAX_STEP_NAME_LENGTH`, `MAX_NOTE_LENGTH`）を UI・スキーマで共有する。
+- **スキーマ変更時はキーのバージョンを上げる**（`glaze:v2:*` → `glaze:v3:*`）と同時に移行処理を追加する。現行は v2（plan / history / settings / draft。ほかに schedule、upgrade-notice）。v1 キーは移行元として読むだけで削除しない。v2 が不正でも v1 には戻らない。
+- **標準工程は `templateId` だけを保存**し、名前以外（コツ・任意・純水対応）はコード（`catalog.ts`）に持つ。テンプレート ID は公開後に変更・再利用しない。工程名は 40 文字以内（超えると保存データ全体が不正扱いになる）。
+- **状態タグ（`CONDITION_TAGS`）は追加のみ**。削除・改名すると保存済み履歴が検証に落ちる。
+- **洗車計画は経過日数で決める**。通常洗車を基本に、コーティング補充・水シミ・水アカ除去を「最初の記録から 28 / 42 日後、以降は最後に実施してから 56 日後」に入れる（`catalog.ts` の `MENU_CYCLES`、周期が重なれば水シミ除去が先）。洗う回数には比例しない。実施メニューは記録の `menu`（任意・未設定は不明）で、予定と違うメニューを実施したらその日から数え直す（`schedule.ts` の `menuFor`）。洗車間隔は 2/3/4/6 週、表示期間は 4/8/12 週で `glaze:v2:schedule`。
+- **メニュー専用の工程**（`catalog.ts` の `menu` 付きテンプレート）は、今回のメニュー（下書きの選択、無ければ予定）に応じて `applyMenu` が plan に出し入れする。メニューが変わる操作（選択変更・記録・履歴削除）の各ハンドラで反映する。
+- **洗車日**は下書きの `washedOn`（YYYY-MM-DD、未設定 = 今日）。過去日はローカル正午の日時で記録し、未来日は受け付けない（`resolveWashedAt`）。
+- **進捗**は未チェックの任意工程を分母に入れない（`planProgress`）。
+- 記録直後は完了メッセージ（次回の予定入り）を表示し、画面を先頭へ戻す。
+- **次回の提案**（`suggestion.ts`）: メニュー変更案は状態タグ（水シミ/鉄粉 → 水シミ・水アカ除去）のみ（経過日数は予定 `menuFor` に含まれる）。鳥フン等・前回未実施の必須工程は情報のみの注意。採用は `draft.menu`、見送りは `draft.dismissed`（記録でドラフトが空になり失効）。自動では予定を書き換えない。
+- 記録は `plannedMenu`（記録時点の予定）と `skipped`（未チェックの必須工程）も持つ。履歴に「予定との差」を出すため。どちらも任意項目（未設定 = 不明）。
+- `menu` は v2 に任意項目として追加した（v2 公開前のため v3 へ上げていない）。公開後の項目追加は版を上げる。
+- 履歴の `waterType` が null は「不明」（v1 由来）。推測で埋めない。
+- 入力長の上限はドメイン定数（`MAX_STEP_NAME_LENGTH`, `MAX_NOTE_LENGTH`, `MAX_CHEMICALS_LENGTH`）を UI・スキーマで共有する。
 - 画面遷移はタブ state のみ（ルーター不要）。必要になるまで追加しない。
 - モバイル前提: タップ領域 44px 以上、入力は 16px 以上（iOS ズーム抑止）、下部タブは `env(safe-area-inset-bottom)` を考慮。
 
@@ -61,4 +81,5 @@ src/
 
 - `crypto.randomUUID` と Service Worker は **secure context（https / localhost）限定**。LAN の `http://192.168.x.x` で実機確認すると SW は動かない（ID 生成はフォールバックあり）。実機で PWA を試すときは https で配信する。
 - Service Worker は `npm run dev` では無効。PWA 挙動は `build` + `preview` で確認する。
+- 洗車の流儀は BEAUTIFUL CARS 洗車チャンネル（村上アツシ氏）の解説に基づく。コツの文面は `src/domain/catalog.ts`。洗車頻度の目安は 2〜3 週間に 1 回（`reminder.ts` の閾値）。
 - データは端末・ブラウザごとに独立。ブラウザのデータ削除で消える（バックアップ機能は未実装）。
