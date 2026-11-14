@@ -12,6 +12,8 @@ export function usePersistentState<T>(
   const [saveFailed, setSaveFailed] = useState(false)
 
   useEffect(() => {
+    // 外部システム（localStorage）への保存の結果を state に反映する。保存は描画中に行えず、結果も effect 内でしか分からない。
+    // oxlint-disable-next-line react/set-state-in-effect
     setSaveFailed(!save(value))
   }, [value, save])
 
