@@ -42,7 +42,7 @@ export const historySchema = z.array(recordSchema)
 export const settingsSchema = z.object({ hasPureWater: z.boolean() })
 
 export const schedulePrefsSchema = z.object({
-  intervalWeeks: z.union([z.literal(2), z.literal(3), z.literal(4), z.literal(6)]),
+  intervalWeeks: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(6)]),
   horizonWeeks: z.union([z.literal(4), z.literal(8), z.literal(12)]),
 })
 
