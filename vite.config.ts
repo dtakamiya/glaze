@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// GitHub Pages ではリポジトリ名のパス（/glaze/）で配信するため、ビルド時に VITE_BASE で指定する。
+const base = process.env.VITE_BASE ?? '/'
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -14,7 +18,8 @@ export default defineConfig({
         short_name: 'Glaze',
         description: '洗車の工程チェックと施工履歴を端末内で管理するアプリ',
         lang: 'ja',
-        start_url: '/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         background_color: '#f6f8fb',
         theme_color: '#1e5fa8',
