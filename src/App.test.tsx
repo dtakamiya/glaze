@@ -497,6 +497,36 @@ describe('過去日で記録するときの予定メニュー', () => {
   })
 })
 
+describe('時間配分の目安', () => {
+  const timing = () => screen.getByTestId('plan-timing').textContent ?? ''
+
+  test('必須工程の合計と残りの目安が出る。任意工程は含めない', () => {
+    setup()
+
+    // 通常洗車: タイヤ・ホイール10 + 予洗い5 + シャンプー15 + すすぎ5 + 拭き上げ10
+    expect(timing()).toContain('所要の目安 約45分')
+    expect(timing()).toContain('残り 45分')
+  })
+
+  test('工程をチェックすると残りが減り、合計は変わらない', async () => {
+    const { user } = setup()
+
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+
+    expect(timing()).toContain('所要の目安 約45分')
+    expect(timing()).toContain('残り 35分')
+  })
+
+  test('自作工程があると、目安に含まれないことを示す', async () => {
+    const { user } = setup()
+
+    await user.type(screen.getByRole('textbox', { name: '追加する工程' }), '鉄粉除去')
+    await user.click(screen.getByRole('button', { name: '追加' }))
+
+    expect(timing()).toContain('自作の工程は含みません')
+  })
+})
+
 describe('進捗', () => {
   test('必須工程をすべて終えれば完了になり、任意工程は分母に入らない', async () => {
     const { user } = setup()

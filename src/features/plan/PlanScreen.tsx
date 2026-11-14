@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { findTemplate } from '../../domain/catalog'
 import { MAX_STEP_NAME_LENGTH, planProgress } from '../../domain/plan'
+import { formatMinutes, planTiming } from '../../domain/timing'
 import type { MenuId, RecordDraft, WashPlan, WashSettings } from '../../domain/types'
 import { RecordForm } from './RecordForm'
 import { ReminderBanner } from './ReminderBanner'
@@ -50,6 +51,7 @@ export function PlanScreen({
   const [newStep, setNewStep] = useState('')
   const [openTipIds, setOpenTipIds] = useState<readonly string[]>([])
   const { done: doneCount, total } = planProgress(plan)
+  const timing = planTiming(plan)
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault()
@@ -101,6 +103,11 @@ export function PlanScreen({
         </span>
       </div>
 
+      <p className="timing" data-testid="plan-timing">
+        所要の目安 約{formatMinutes(timing.totalMinutes)}・残り {formatMinutes(timing.remainingMinutes)}
+        {timing.hasUnestimated && '（自作の工程は含みません）'}
+      </p>
+
       <ul className="steps">
         {plan.steps.map((step) => {
           const template = findTemplate(step.templateId)
@@ -113,6 +120,7 @@ export function PlanScreen({
                 <input type="checkbox" checked={step.done} onChange={() => onToggle(step.id)} />
                 <span>{step.name}</span>
               </label>
+              {template !== undefined && <span className="step__minutes">{template.minutes}分</span>}
               {template?.optional && <span className="badge">任意</span>}
               {tips.length > 0 && (
                 <TipToggle

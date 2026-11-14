@@ -14,6 +14,8 @@ export interface StepTemplate {
   /** slot 内でどちらの変種か（true = 純水あり） */
   readonly pureWater?: boolean
   readonly optional: boolean
+  /** 所要時間の目安（分）。実測ではなく目安で、計画の時間配分に使う */
+  readonly minutes: number
   /** 設定すると、そのメニューの日だけ plan に入る工程（通常は未設定） */
   readonly menu?: MenuId
   readonly tips: readonly string[]
@@ -25,6 +27,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'tire-wheel',
     name: 'タイヤ・ホイール洗浄',
     optional: false,
+    minutes: 10,
     tips: [
       'ボディより先に、洗車の最初に洗う',
       'キュッキュッと音が鳴らない力加減で、表面の砂を落とすように優しく洗う',
@@ -36,12 +39,14 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'pre-rinse',
     name: '予洗い（砂を流す）',
     optional: false,
+    minutes: 5,
     tips: ['水で砂をしっかり流す。高圧洗浄機は必須ではなく、シャワーノズルでよい'],
   },
   {
     id: 'shampoo',
     name: 'シャンプー洗車',
     optional: false,
+    minutes: 15,
     tips: [
       'スポンジは力を入れず撫でるように。砂を寄せる意識で洗う',
       '一度付けたらスポンジを離さない',
@@ -56,6 +61,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     slot: 'rinse',
     pureWater: true,
     optional: false,
+    minutes: 5,
     tips: [
       'TDS メーターが 0 になっていることを確認してから使う',
       '純水は乾いても水シミになりにくく、ドア内側などは洗わず流すだけでもよい',
@@ -67,6 +73,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     slot: 'rinse',
     pureWater: false,
     optional: false,
+    minutes: 5,
     tips: [
       '水道水は乾くとミネラルが水シミになる。すすいだらすぐ拭き上げる',
       'ドア内側などは砂を流してから拭く（乾拭きで砂を擦らない）',
@@ -76,6 +83,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'bug-bird',
     name: '虫・鳥フン処理',
     optional: true,
+    minutes: 5,
     tips: [
       'すすいだ後に専用リムーバーを汚れに吹きかける',
       '水で濡らして絞ったマイクロファイバーで撫でる。擦らない',
@@ -86,6 +94,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'menu-mineral',
     name: '水シミ・水アカ除去',
     optional: false,
+    minutes: 15,
     menu: 'mineral',
     tips: [
       'すすいだ後に、ミネラルリムーバーなどの専用品を使う',
@@ -96,6 +105,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'wipe-coat',
     name: '拭き上げ＋コーティング',
     optional: false,
+    minutes: 10,
     tips: [
       '柔らかいマイクロファイバーに油分なしのスプレーコーティング剤を吹き、水気をふんわり拭く',
       '乾拭きはしない',
@@ -107,6 +117,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'menu-coating',
     name: 'コーティング補充',
     optional: false,
+    minutes: 10,
     menu: 'coating',
     tips: [
       '拭き上げの後に、油分なしのスプレーコーティング剤（シーラント）を丁寧に塗り直す',
@@ -117,12 +128,14 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     id: 'window',
     name: '窓ガラス清掃',
     optional: true,
+    minutes: 5,
     tips: ['内窓は、洗って少しカサカサにしたタオルと水だけでも綺麗になる'],
   },
   {
     id: 'interior',
     name: '内装清掃',
     optional: true,
+    minutes: 15,
     tips: [],
   },
 ]

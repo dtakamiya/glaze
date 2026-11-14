@@ -346,6 +346,17 @@ textarea {
 .step {
   flex-wrap: wrap;
 }
+.timing {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.step__minutes {
+  margin-right: 8px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
 .badge {
   font-size: 0.75rem;
   padding: 1px 8px;
