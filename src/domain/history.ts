@@ -3,7 +3,7 @@ import { completedStepNames } from './plan'
 import type { ConditionTag, IdGenerator, MenuId, RecordDraft, SkippedStep, WashPlan, WashRecord, WashSettings, WaterType } from './types'
 
 export const MAX_NOTE_LENGTH = 500
-export const MAX_CHEMICALS_LENGTH = 100
+export const MAX_CHEMICALS_LENGTH = 200
 
 /** 未チェックの必須工程（任意工程は含めない）。 */
 function skippedRequiredSteps(plan: WashPlan): SkippedStep[] {
