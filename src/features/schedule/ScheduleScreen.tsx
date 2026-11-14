@@ -5,6 +5,7 @@ import { HORIZON_WEEKS_OPTIONS, INTERVAL_WEEKS_OPTIONS } from '../../domain/sett
 import { formatMonthDay, toDateString } from '../../lib/format'
 import { SuggestionList } from './SuggestionList'
 import type { HorizonWeeks, IntervalWeeks, MenuId, SchedulePrefs } from '../../domain/types'
+import { OfuseButton } from '../../components/OfuseButton'
 
 interface ScheduleScreenProps {
   items: readonly ScheduleItem[]
@@ -121,6 +122,7 @@ export function ScheduleScreen({
       <p className="schedule__note">
         コーティング補充（ナノダイヤモンドトナー）は 2 週間ごと、フルオリンセラム施工と水シミ・水アカ除去は 4 週間ごとに、最後にやってからの日数で入ります。洗う回数が多くても増えすぎません。記録するときに別のメニューへ変えることもできます。
       </p>
+      <OfuseButton />
     </section>
   )
 }

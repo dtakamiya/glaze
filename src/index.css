@@ -588,6 +588,13 @@ fieldset.field legend {
   font-size: 0.8125rem;
   color: var(--color-muted);
 }
+.ofuse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+  text-decoration: none;
+}
 .tag--menu {
   background: var(--color-primary);
   color: var(--color-primary-contrast);
