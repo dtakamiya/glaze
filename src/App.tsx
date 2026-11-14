@@ -31,16 +31,19 @@ import { usePersistentState } from './hooks/usePersistentState'
 import { formatMonthDay, toDateString } from './lib/format'
 import { createId } from './lib/id'
 import {
+  hasLegacyData,
   loadDraft,
   loadHistory,
   loadPlan,
   loadSchedulePrefs,
   loadSettings,
+  loadUpgradeNoticeDismissed,
   saveDraft,
   saveHistory,
   savePlan,
   saveSchedulePrefs,
   saveSettings,
+  saveUpgradeNoticeDismissed,
 } from './storage/storage'
 
 /** 保存済みの plan に、今回のメニュー専用の工程を反映して読み込む。 */
@@ -69,6 +72,13 @@ function App() {
     document.addEventListener('visibilitychange', refresh)
     return () => document.removeEventListener('visibilitychange', refresh)
   }, [])
+
+  // 以前のバージョンのデータを引き継いだ人に、新機能を案内する（初回描画時に判定。閉じたら保存）
+  const [showUpgradeNotice, setShowUpgradeNotice] = useState(() => hasLegacyData() && !loadUpgradeNoticeDismissed())
+  const handleDismissUpgradeNotice = () => {
+    saveUpgradeNoticeDismissed(true)
+    setShowUpgradeNotice(false)
+  }
 
   const [notice, setNotice] = useState<string | null>(null)
   const [prefs, setPrefs, prefsSaveFailed] = usePersistentState(loadSchedulePrefs, saveSchedulePrefs)
@@ -159,6 +169,8 @@ function App() {
             today={toDateString(now)}
             daysSinceLastWash={daysSinceLastWash(history, now)}
             recentChemicals={recentChemicals(history, RECENT_CHEMICALS_LIMIT)}
+            showUpgradeNotice={showUpgradeNotice}
+            onDismissUpgradeNotice={handleDismissUpgradeNotice}
             intervalWeeks={prefs.intervalWeeks}
             onDraftChange={handleDraftChange}
             onPureWaterChange={handlePureWaterChange}

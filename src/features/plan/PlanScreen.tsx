@@ -6,6 +6,7 @@ import type { MenuId, RecordDraft, WashPlan, WashSettings } from '../../domain/t
 import { FirstRunGuide } from './FirstRunGuide'
 import { RecordForm } from './RecordForm'
 import { ReminderBanner } from './ReminderBanner'
+import { UpgradeNotice } from './UpgradeNotice'
 import { TipPanel, TipToggle } from './StepTip'
 
 interface PlanScreenProps {
@@ -19,6 +20,9 @@ interface PlanScreenProps {
   today: string
   /** 最後の洗車からの日数（履歴なしは null） */
   daysSinceLastWash: number | null
+  /** 以前のバージョンから引き継いだ利用者向けの案内を出すか */
+  showUpgradeNotice: boolean
+  onDismissUpgradeNotice: () => void
   /** 最近使ったケミカル（新しい順） */
   recentChemicals: readonly string[]
   /** 設定中の洗車間隔（週） */
@@ -41,6 +45,8 @@ export function PlanScreen({
   notice,
   today,
   daysSinceLastWash,
+  showUpgradeNotice,
+  onDismissUpgradeNotice,
   recentChemicals,
   intervalWeeks,
   onDraftChange,
@@ -80,7 +86,8 @@ export function PlanScreen({
         {notice !== null && <p className="toast">{notice}</p>}
       </div>
 
-      {daysSinceLastWash === null && <FirstRunGuide />}
+      {showUpgradeNotice && <UpgradeNotice onDismiss={onDismissUpgradeNotice} />}
+      {daysSinceLastWash === null && !showUpgradeNotice && <FirstRunGuide />}
 
       <ReminderBanner days={daysSinceLastWash} intervalWeeks={intervalWeeks} />
 

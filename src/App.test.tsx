@@ -98,6 +98,43 @@ describe('工程のコツ', () => {
   })
 })
 
+describe('v1 ユーザーへの新機能の案内', () => {
+  const seedLegacy = () =>
+    localStorage.setItem(
+      LEGACY_HISTORY_KEY,
+      JSON.stringify([{ id: 'r', washedAt: '2026-01-01T00:00:00.000Z', steps: ['拭き上げ'], note: '' }]),
+    )
+
+  test('v1 のデータがあると案内が出て、閉じると次回以降も出ない', async () => {
+    seedLegacy()
+    const first = setup()
+
+    expect(screen.getByRole('region', { name: '新しくなりました' })).toHaveTextContent('初期プランに戻す')
+
+    await first.user.click(screen.getByRole('button', { name: '閉じる' }))
+    expect(screen.queryByRole('region', { name: '新しくなりました' })).not.toBeInTheDocument()
+
+    first.unmount()
+    setup()
+    expect(screen.queryByRole('region', { name: '新しくなりました' })).not.toBeInTheDocument()
+  })
+
+  test('閉じなければ再起動しても案内が残る', () => {
+    seedLegacy()
+    setup().unmount()
+
+    setup()
+
+    expect(screen.getByRole('region', { name: '新しくなりました' })).toBeInTheDocument()
+  })
+
+  test('v1 のデータが無い新規ユーザーには出ない', () => {
+    setup()
+
+    expect(screen.queryByRole('region', { name: '新しくなりました' })).not.toBeInTheDocument()
+  })
+})
+
 describe('初回の案内', () => {
   test('履歴が無いうちは使い方の案内が出て、最初の記録のあとに消える', async () => {
     const { user } = setup()

@@ -365,6 +365,10 @@ textarea {
   line-height: 1.6;
 }
 
+.guide .button {
+  margin-top: 12px;
+}
+
 /* step extras */
 .step {
   flex-wrap: wrap;

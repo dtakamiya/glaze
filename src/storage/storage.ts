@@ -20,6 +20,7 @@ export const HISTORY_KEY = 'glaze:v2:history'
 export const SETTINGS_KEY = 'glaze:v2:settings'
 export const DRAFT_KEY = 'glaze:v2:draft'
 export const SCHEDULE_KEY = 'glaze:v2:schedule'
+export const UPGRADE_NOTICE_KEY = 'glaze:v2:upgrade-notice'
 export const LEGACY_PLAN_KEY = 'glaze:v1:plan'
 export const LEGACY_HISTORY_KEY = 'glaze:v1:history'
 
@@ -143,4 +144,20 @@ export function loadSchedulePrefs(): SchedulePrefs {
 
 export function saveSchedulePrefs(prefs: SchedulePrefs): boolean {
   return write(SCHEDULE_KEY, prefs)
+}
+
+/** v1 の保存データ（移行元）が端末に残っているか。 */
+export function hasLegacyData(): boolean {
+  const history = readRaw(LEGACY_HISTORY_KEY)
+  const plan = readRaw(LEGACY_PLAN_KEY)
+  return (history.ok && history.raw !== null) || (plan.ok && plan.raw !== null)
+}
+
+/** v1 ユーザー向けの新機能の案内を、閉じ済みか。 */
+export function loadUpgradeNoticeDismissed(): boolean {
+  return read(UPGRADE_NOTICE_KEY, z.boolean(), () => false)
+}
+
+export function saveUpgradeNoticeDismissed(dismissed: boolean): boolean {
+  return write(UPGRADE_NOTICE_KEY, dismissed)
 }
