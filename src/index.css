@@ -188,9 +188,16 @@ textarea {
 }
 
 .record__actions {
+  /* 長いフォームでも「施工を記録」を探さずに押せるよう、下部タブの上に固定する */
+  position: sticky;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  z-index: 1;
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin: 12px -16px 0;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
 }
 .record__actions .button {
   flex: 1;
@@ -427,6 +434,10 @@ textarea {
 }
 
 /* record form extras */
+.record {
+  /* 子の sticky が画面全体を範囲にできるよう、自身の箱は作らない */
+  display: contents;
+}
 .record .field {
   margin-bottom: 12px;
 }
