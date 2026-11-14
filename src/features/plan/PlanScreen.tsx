@@ -18,6 +18,8 @@ interface PlanScreenProps {
   today: string
   /** 最後の洗車からの日数（履歴なしは null） */
   daysSinceLastWash: number | null
+  /** 最近使ったケミカル（新しい順） */
+  recentChemicals: readonly string[]
   /** 設定中の洗車間隔（週） */
   intervalWeeks: number
   onDraftChange: (draft: RecordDraft) => void
@@ -38,6 +40,7 @@ export function PlanScreen({
   notice,
   today,
   daysSinceLastWash,
+  recentChemicals,
   intervalWeeks,
   onDraftChange,
   onPureWaterChange,
@@ -163,6 +166,7 @@ export function PlanScreen({
         settings={settings}
         plannedMenu={plannedMenu}
         today={today}
+        recentChemicals={recentChemicals}
         canRecord={doneCount > 0}
         onDraftChange={onDraftChange}
         onReset={onReset}

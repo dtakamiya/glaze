@@ -435,6 +435,15 @@ fieldset.field legend {
   background: var(--color-surface);
   cursor: pointer;
 }
+.chips--inline {
+  margin-bottom: 12px;
+}
+.chips--inline .chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .chip[aria-pressed='true'] {
   background: var(--color-primary);
   border-color: var(--color-primary);

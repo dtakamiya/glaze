@@ -10,6 +10,8 @@ interface RecordFormProps {
   plannedMenu: MenuId
   /** 今日の日付（YYYY-MM-DD） */
   today: string
+  /** 最近使ったケミカルの候補（押すと入力欄に入る） */
+  recentChemicals: readonly string[]
   canRecord: boolean
   onDraftChange: (draft: RecordDraft) => void
   onReset: () => void
@@ -31,7 +33,7 @@ function toWashedOn(value: string, today: string): string | undefined {
   return value === '' || value >= today ? undefined : value
 }
 
-export function RecordForm({ draft, settings, plannedMenu, today, canRecord, onDraftChange, onReset, onRecord }: RecordFormProps) {
+export function RecordForm({ draft, settings, plannedMenu, today, recentChemicals, canRecord, onDraftChange, onReset, onRecord }: RecordFormProps) {
   const followed = settings.hasPureWater ? '純水' : '水道水'
 
   return (
@@ -83,6 +85,23 @@ export function RecordForm({ draft, settings, plannedMenu, today, canRecord, onD
           onChange={(e) => onDraftChange({ ...draft, chemicals: e.target.value })}
         />
       </label>
+      {recentChemicals.filter((value) => value !== draft.chemicals).length > 0 && (
+        <div className="chips chips--inline">
+          {recentChemicals
+            .filter((value) => value !== draft.chemicals)
+            .map((value) => (
+              <button
+                key={value}
+                type="button"
+                className="chip"
+                aria-label={`ケミカルに入力: ${value}`}
+                onClick={() => onDraftChange({ ...draft, chemicals: value })}
+              >
+                {value}
+              </button>
+            ))}
+        </div>
+      )}
 
       <fieldset className="field chips">
         <legend>汚れ・状態</legend>

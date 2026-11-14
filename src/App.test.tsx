@@ -497,6 +497,29 @@ describe('過去日で記録するときの予定メニュー', () => {
   })
 })
 
+describe('ケミカルの再利用', () => {
+  const chemicals = () => screen.getByRole('textbox', { name: '使用ケミカル' })
+
+  test('履歴が無いうちは候補が出ない', () => {
+    setup()
+
+    expect(screen.queryByRole('button', { name: /^ケミカルに入力:/ })).not.toBeInTheDocument()
+  })
+
+  test('前回のケミカルを押すと入力欄に入る。入力済みの値と同じ候補は出ない', async () => {
+    const { user } = setup()
+    await user.type(chemicals(), 'スリーク')
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+    expect(chemicals()).toHaveValue('')
+
+    await user.click(screen.getByRole('button', { name: 'ケミカルに入力: スリーク' }))
+
+    expect(chemicals()).toHaveValue('スリーク')
+    expect(screen.queryByRole('button', { name: 'ケミカルに入力: スリーク' })).not.toBeInTheDocument()
+  })
+})
+
 describe('時間配分の目安', () => {
   const timing = () => screen.getByTestId('plan-timing').textContent ?? ''
 

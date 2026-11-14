@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_DRAFT } from './draft'
-import { addRecord, createRecord, removeRecord, resolveWashedAt } from './history'
+import { addRecord, createRecord, recentChemicals, removeRecord, resolveWashedAt } from './history'
 import { DEFAULT_SETTINGS } from './settings'
 import type { RecordDraft, WashPlan, WashRecord } from './types'
 
@@ -150,5 +150,35 @@ describe('resolveWashedAt', () => {
     for (const value of ['2026-11-14', '2026-11-20', 'yesterday', '2026-02-31', '2026-13-01']) {
       expect(resolveWashedAt(value, now)).toBe(now)
     }
+  })
+})
+
+describe('recentChemicals', () => {
+  const withChemicals = (id: string, washedAt: string, chemicals: string): WashRecord => ({ ...record(id, washedAt), chemicals })
+
+  test('returns distinct non-empty values, newest first, regardless of storage order', () => {
+    const history = [
+      withChemicals('a', '2026-10-01T03:00:00.000Z', 'シャンプーA'),
+      withChemicals('c', '2026-11-01T03:00:00.000Z', 'コートB'),
+      withChemicals('b', '2026-10-15T03:00:00.000Z', ''),
+      withChemicals('d', '2026-10-20T03:00:00.000Z', 'シャンプーA'),
+    ]
+
+    expect(recentChemicals(history, 5)).toEqual(['コートB', 'シャンプーA'])
+  })
+
+  test('limits the number of candidates and does not mutate the history', () => {
+    const history = [
+      withChemicals('a', '2026-10-01T03:00:00.000Z', 'A'),
+      withChemicals('b', '2026-10-02T03:00:00.000Z', 'B'),
+      withChemicals('c', '2026-10-03T03:00:00.000Z', 'C'),
+    ]
+
+    expect(recentChemicals(history, 2)).toEqual(['C', 'B'])
+    expect(history.map((r) => r.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  test('is empty without history', () => {
+    expect(recentChemicals([], 3)).toEqual([])
   })
 })

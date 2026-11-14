@@ -61,3 +61,17 @@ export function resolveWashedAt(washedOn: string | undefined, now: Date): Date {
   const dayStart = new Date(year, month - 1, day).getTime()
   return valid && dayStart < todayStart ? date : now
 }
+
+/** 記録フォームに候補として出す、最近使ったケミカルの数。 */
+export const RECENT_CHEMICALS_LIMIT = 3
+
+/** 最近使ったケミカル（空欄を除き重複なし、新しい順）。履歴は変更しない。 */
+export function recentChemicals(history: readonly WashRecord[], limit: number): string[] {
+  const time = (record: WashRecord) => {
+    const value = new Date(record.washedAt).getTime()
+    return Number.isNaN(value) ? Number.NEGATIVE_INFINITY : value
+  }
+  const newestFirst = [...history].sort((a, b) => (time(a) === time(b) ? 0 : time(a) < time(b) ? 1 : -1))
+  const values = newestFirst.map((record) => record.chemicals.trim()).filter((value) => value !== '')
+  return [...new Set(values)].slice(0, limit)
+}

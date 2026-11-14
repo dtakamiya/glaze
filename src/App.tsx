@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { TabBar, type TabId } from './components/TabBar'
 import { EMPTY_DRAFT, dismissSuggestion } from './domain/draft'
 import { menuName } from './domain/catalog'
-import { addRecord, createRecord, removeRecord, resolveWashedAt } from './domain/history'
+import {
+  addRecord,
+  createRecord,
+  RECENT_CHEMICALS_LIMIT,
+  recentChemicals,
+  removeRecord,
+  resolveWashedAt,
+} from './domain/history'
 import {
   addStep,
   applyMenu,
@@ -151,6 +158,7 @@ function App() {
             notice={notice}
             today={toDateString(now)}
             daysSinceLastWash={daysSinceLastWash(history, now)}
+            recentChemicals={recentChemicals(history, RECENT_CHEMICALS_LIMIT)}
             intervalWeeks={prefs.intervalWeeks}
             onDraftChange={handleDraftChange}
             onPureWaterChange={handlePureWaterChange}
