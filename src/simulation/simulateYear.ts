@@ -1,7 +1,8 @@
 import { findTemplate } from '../domain/catalog'
 import { EMPTY_DRAFT, dismissSuggestion } from '../domain/draft'
 import { addRecord, createRecord, resolveWashedAt } from '../domain/history'
-import { applyMenu, createDefaultPlan, resetPlan, toggleStep } from '../domain/plan'
+import { dueStepIds } from '../domain/periodic'
+import { applyMenu, applyPeriodic, createDefaultPlan, resetPlan, toggleStep } from '../domain/plan'
 import { daysSinceLastWash, reminderStatus, type ReminderStatus } from '../domain/reminder'
 import { currentMenu, nextMenu } from '../domain/schedule'
 import { suggestNext, visibleSuggestions } from '../domain/suggestion'
@@ -135,6 +136,8 @@ export function simulatePersona(persona: Persona, seed = 1): SimulationResult {
         break
       }
 
+      // 周期つき工程（ホイール洗浄）は、洗車した日に周期が来ているときだけ plan に入る
+      plan = applyPeriodic(plan, dueStepIds(history, recordedAt), createId)
       for (const step of plan.steps) {
         const optional = findTemplate(step.templateId)?.optional === true
         if (rng.chance(optional ? persona.optionalRate : persona.requiredRate)) plan = toggleStep(plan, step.id)
@@ -151,7 +154,7 @@ export function simulatePersona(persona: Persona, seed = 1): SimulationResult {
         plannedMenu,
       )
       history = addRecord(history, record)
-      plan = applyMenu(resetPlan(plan), nextMenu(history, today), createId)
+      plan = applyPeriodic(applyMenu(resetPlan(plan), nextMenu(history, today), createId), dueStepIds(history, today), createId)
       draft = EMPTY_DRAFT
 
       events.push({

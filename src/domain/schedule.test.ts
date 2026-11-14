@@ -44,38 +44,41 @@ describe('menuFor', () => {
     expect(menuFor([], local(2026, 11, 14))).toBe('regular')
   })
 
-  test('adds coating 28 days and mineral removal 42 days after the first record', () => {
+  test('adds coating 14 days and mineral removal 28 days after the first record', () => {
     const history = [record(local(2026, 11, 1), 'regular')]
 
-    expect(menuFor(history, local(2026, 11, 28))).toBe('regular')
-    expect(menuFor(history, local(2026, 11, 29))).toBe('coating')
-    expect(menuFor(history, local(2026, 12, 12))).toBe('coating') // 水シミ除去は 12/13 から
-    expect(menuFor([...history, record(local(2026, 11, 29), 'coating')], local(2026, 12, 13))).toBe('mineral')
+    expect(menuFor(history, local(2026, 11, 14))).toBe('regular')
+    expect(menuFor(history, local(2026, 11, 15))).toBe('coating')
+    expect(menuFor(history, local(2026, 11, 28))).toBe('coating') // 水シミ除去は 11/29 から
+    expect(menuFor([...history, record(local(2026, 11, 15), 'coating')], local(2026, 11, 29))).toBe('mineral')
   })
 
-  test('prefers mineral removal when both cycles are due', () => {
+  test('picks the menu that has been due longer, and prefers mineral removal on a tie', () => {
     const history = [record(local(2026, 11, 1), 'regular')]
 
-    expect(menuFor(history, local(2026, 12, 13))).toBe('mineral')
+    expect(menuFor(history, local(2026, 11, 29))).toBe('coating') // コーティングは 11/15 から、水シミ除去は 11/29 から
+    expect(menuFor([...history, record(local(2026, 11, 15), 'coating')], local(2026, 11, 29))).toBe('mineral') // 同じ日
   })
 
-  test('counts 56 days from the last time a special menu was done', () => {
+  test('counts 14 days for coating and 28 days for mineral from the last time each was done', () => {
     const history = [
       record(local(2026, 11, 1), 'regular'),
-      record(local(2026, 11, 29), 'coating'),
-      record(local(2026, 12, 13), 'mineral'),
+      record(local(2026, 11, 15), 'coating'),
+      record(local(2026, 11, 29), 'mineral'),
+      record(local(2026, 12, 13), 'coating'),
     ]
 
-    expect(menuFor(history, local(2027, 1, 23))).toBe('regular')
-    expect(menuFor(history, local(2027, 1, 24))).toBe('coating')
-    expect(menuFor(history, local(2027, 2, 7))).toBe('mineral') // 両方の周期が来ていれば mineral が先
+    expect(menuFor(history, local(2026, 12, 26))).toBe('regular')
+    expect(menuFor(history, local(2026, 12, 27))).toBe('mineral') // 両方の周期が来ていれば mineral が先
   })
 
   test('a menu done earlier than planned pushes its next date back', () => {
     const history = [record(local(2026, 11, 1), 'regular'), record(local(2026, 11, 10), 'mineral')]
 
-    expect(menuFor(history, local(2026, 12, 13))).toBe('coating')
-    expect(menuFor([...history, record(local(2026, 11, 29), 'coating')], local(2026, 12, 13))).toBe('regular')
+    expect(menuFor(history, local(2026, 11, 14))).toBe('regular')
+    expect(menuFor(history, local(2026, 11, 15))).toBe('coating')
+    expect(menuFor([...history, record(local(2026, 11, 29), 'coating')], local(2026, 12, 7))).toBe('regular')
+    expect(menuFor([...history, record(local(2026, 11, 29), 'coating')], local(2026, 12, 8))).toBe('mineral')
   })
 
   test('is independent of history order and ignores unknown menus and invalid dates', () => {
@@ -84,20 +87,20 @@ describe('menuFor', () => {
     const invalid = { ...record(local(2026, 11, 2), 'mineral'), washedAt: 'invalid' }
 
     expect(menuFor([b, a, invalid], local(2026, 12, 13))).toBe(menuFor([a, b], local(2026, 12, 13)))
-    expect(menuFor([a], local(2026, 11, 29))).toBe('coating')
+    expect(menuFor([a], local(2026, 11, 15))).toBe('coating')
   })
 
   test('ignores records newer than the date, so a backfilled day gets that day\'s plan', () => {
     const history = [record(local(2026, 10, 1), 'regular'), record(local(2026, 11, 5), 'coating')]
 
-    expect(menuFor(history, local(2026, 10, 30))).toBe('coating') // 10/1 から 28 日たっている
+    expect(menuFor(history, local(2026, 10, 15))).toBe('coating') // 10/1 から 14 日たっている
     expect(menuFor(history, local(2026, 9, 20))).toBe('regular') // 最初の記録より前
-    expect(menuFor(history, local(2026, 11, 10))).toBe('regular') // 11/5 のコーティングから 56 日はまだ、水シミ除去は 11/12 から
+    expect(menuFor(history, local(2026, 11, 10))).toBe('mineral') // 11/5 のコーティングは 11/19 から、水シミ除去は 10/29 から
   })
 
   test('nextMenu and currentMenu follow it, preferring a menu chosen in the draft', () => {
     const history = [record(local(2026, 11, 1), 'regular')]
-    const day = local(2026, 11, 29)
+    const day = local(2026, 11, 15)
 
     expect(nextMenu(history, day)).toBe('coating')
     expect(currentMenu(undefined, history, day)).toBe('coating')
@@ -105,15 +108,15 @@ describe('menuFor', () => {
   })
 
   test('does not add special menus just because the user washes often', () => {
-    // 毎週洗っても、24 週で特別メニューは周期（約 8 週）ぶんだけ
+    // 毎週洗っても、24 週で特別メニューは周期（コーティング 2 週・水シミ除去 4 週）ぶんだけ
     let history: WashRecord[] = []
     for (let week = 0; week < 24; week += 1) {
       const day = local(2026, 1, 5 + week * 7)
       history = [...history, record(day, menuFor(history, day))]
     }
 
-    expect(history.filter((r) => r.menu === 'coating').length).toBeLessThanOrEqual(4)
-    expect(history.filter((r) => r.menu === 'mineral').length).toBeLessThanOrEqual(4)
+    expect(history.filter((r) => r.menu === 'coating').length).toBeLessThanOrEqual(12)
+    expect(history.filter((r) => r.menu === 'mineral').length).toBeLessThanOrEqual(6)
   })
 })
 
@@ -124,7 +127,7 @@ describe('buildSchedule', () => {
     const items = buildSchedule([], prefs(2, 8), now)
 
     expect(items.map((i) => ymd(i.date))).toEqual(['11/14', '11/28', '12/12', '12/26', '1/9'])
-    expect(items.map((i) => i.menu)).toEqual(['regular', 'regular', 'coating', 'mineral', 'regular'])
+    expect(items.map((i) => i.menu)).toEqual(['regular', 'coating', 'mineral', 'coating', 'mineral'])
     expect(items[0].overdueDays).toBe(0)
   })
 
@@ -132,7 +135,7 @@ describe('buildSchedule', () => {
     const items = buildSchedule([record(local(2026, 11, 10), 'regular')], prefs(2, 4), now)
 
     expect(items.map((i) => ymd(i.date))).toEqual(['11/24', '12/8'])
-    expect(items.map((i) => i.menu)).toEqual(['regular', 'coating'])
+    expect(items.map((i) => i.menu)).toEqual(['coating', 'mineral'])
   })
 
   test('pulls an overdue first item to today and counts from there', () => {
@@ -141,15 +144,15 @@ describe('buildSchedule', () => {
     expect(items.map((i) => ymd(i.date))).toEqual(['11/14', '11/28', '12/12'])
     expect(items[0].overdueDays).toBe(11)
     expect(items[1].overdueDays).toBe(0)
-    expect(items.map((i) => i.menu)).toEqual(['regular', 'regular', 'mineral'])
+    expect(items.map((i) => i.menu)).toEqual(['coating', 'mineral', 'coating'])
   })
 
   test('uses the longer interval and horizon', () => {
     const items = buildSchedule([record(local(2026, 11, 14), 'regular')], prefs(3, 12), now)
 
     expect(items.map((i) => ymd(i.date))).toEqual(['12/5', '12/26', '1/16', '2/6'])
-    // 12/26 は最初の記録から 42 日（水シミ除去が先）、その次の 1/16 でコーティング補充
-    expect(items.map((i) => i.menu)).toEqual(['regular', 'mineral', 'coating', 'regular'])
+    // 周期が来てから長い方が先。12/26 は水シミ除去（12/12 から）、1/16 はコーティング（12/19 から）
+    expect(items.map((i) => i.menu)).toEqual(['coating', 'mineral', 'coating', 'mineral'])
   })
 
   test('supports a monthly or longer interval', () => {
@@ -174,7 +177,7 @@ describe('buildSchedule', () => {
   test('replaces only the first menu and carries on as if it had been done', () => {
     const items = buildSchedule([], prefs(2, 4), now, 'mineral')
 
-    expect(items.map((i) => i.menu)).toEqual(['mineral', 'regular', 'coating'])
+    expect(items.map((i) => i.menu)).toEqual(['mineral', 'coating', 'mineral'])
   })
 })
 
