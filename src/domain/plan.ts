@@ -1,14 +1,23 @@
-import { STEP_TEMPLATES, findTemplate, templateIndex } from './catalog'
+import { STEP_TEMPLATES, findTemplate, templateIndex, type StepTemplate } from './catalog'
 import type { IdGenerator, MenuId, WashPlan, WashSettings, WashStep } from './types'
 
 export const MAX_STEP_NAME_LENGTH = 40
 
-/** 設定とメニューに合うテンプレートだけを、カタログ順に並べた標準プランを作る。 */
-export function createDefaultPlan(settings: WashSettings, createId: IdGenerator, menu?: MenuId): WashPlan {
+/**
+ * 設定とメニューに合うテンプレートだけを、カタログ順に並べた標準プランを作る。
+ * 周期つき工程は dueStepIds に含まれるものだけを入れる（未指定ならすべて入れる）。
+ */
+export function createDefaultPlan(
+  settings: WashSettings,
+  createId: IdGenerator,
+  menu?: MenuId,
+  dueStepIds?: ReadonlySet<string>,
+): WashPlan {
   const steps = STEP_TEMPLATES.filter(
     (template) =>
       (template.slot === undefined || template.pureWater === settings.hasPureWater) &&
-      (template.menu === undefined || template.menu === menu),
+      (template.menu === undefined || template.menu === menu) &&
+      (template.everyDays === undefined || dueStepIds === undefined || dueStepIds.has(template.id)),
   ).map((template) => ({
     id: createId(),
     name: template.name,
@@ -57,15 +66,31 @@ export function applyMenu(plan: WashPlan, menu: MenuId, createId: IdGenerator): 
   const base = plan.steps.filter((step) => !isMenuStep(step))
   if (wanted === undefined) return { ...plan, steps: base }
 
-  const wantedIndex = templateIndex(wanted.id)
-  const before = base.findIndex((step) => {
-    const index = templateIndex(step.templateId)
-    return index > wantedIndex
-  })
-  const lastTemplated = base.reduce((last, step, i) => (templateIndex(step.templateId) >= 0 ? i : last), -1)
+  return { ...plan, steps: insertInCatalogOrder(base, wanted, createId) }
+}
+
+/** テンプレートの工程を、カタログ順の位置に入れた steps を返す。 */
+function insertInCatalogOrder(steps: readonly WashStep[], template: StepTemplate, createId: IdGenerator): WashStep[] {
+  const templateOrder = templateIndex(template.id)
+  const before = steps.findIndex((step) => templateIndex(step.templateId) > templateOrder)
+  const lastTemplated = steps.reduce((last, step, i) => (templateIndex(step.templateId) >= 0 ? i : last), -1)
   const at = before >= 0 ? before : lastTemplated + 1
-  const added: WashStep = { id: createId(), name: wanted.name, done: false, templateId: wanted.id }
-  return { ...plan, steps: [...base.slice(0, at), added, ...base.slice(at)] }
+  const added: WashStep = { id: createId(), name: template.name, done: false, templateId: template.id }
+  return [...steps.slice(0, at), added, ...steps.slice(at)]
+}
+
+/**
+ * 周期つき工程を、今回必要なものだけにする。必要なのに無い工程はカタログ順の位置に入れ、
+ * 不要なのにある工程は取り除く。変更が無ければ同じ plan を返す（冪等）。
+ */
+export function applyPeriodic(plan: WashPlan, dueStepIds: ReadonlySet<string>, createId: IdGenerator): WashPlan {
+  return STEP_TEMPLATES.filter((template) => template.everyDays !== undefined).reduce((current, template) => {
+    const present = current.steps.some((step) => step.templateId === template.id)
+    const due = dueStepIds.has(template.id)
+    if (present === due) return current
+    if (!due) return { ...current, steps: current.steps.filter((step) => step.templateId !== template.id) }
+    return { ...current, steps: insertInCatalogOrder(current.steps, template, createId) }
+  }, plan)
 }
 
 /** 進捗。未チェックの任意工程は分母に入れない（必須を終えれば完了にできる）。 */

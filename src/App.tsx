@@ -15,12 +15,14 @@ import {
 import {
   addStep,
   applyMenu,
+  applyPeriodic,
   applyPureWater,
   createDefaultPlan,
   removeStep,
   resetPlan,
   toggleStep,
 } from './domain/plan'
+import { dueStepIds, sameIds } from './domain/periodic'
 import { daysSinceLastWash } from './domain/reminder'
 import { buildSchedule, currentMenu, lastWash, nextMenu } from './domain/schedule'
 import { setPureWater } from './domain/settings'
@@ -48,13 +50,15 @@ import {
   saveUpgradeNoticeDismissed,
 } from './storage/storage'
 
-/** 保存済みの plan に、今回のメニュー専用の工程を反映して読み込む。 */
+/** 保存済みの plan に、今回のメニュー専用の工程と、周期が来ている工程を反映して読み込む。 */
 function loadInitialPlan() {
   const draft = loadDraft()
-  const now = new Date()
-  const menu = currentMenu(draft.menu, loadHistory(), resolveWashedAt(draft.washedOn, now))
-  const plan = loadPlan(() => createDefaultPlan(loadSettings(), createId, menu))
-  return applyMenu(plan, menu, createId)
+  const history = loadHistory()
+  const washDate = resolveWashedAt(draft.washedOn, new Date())
+  const menu = currentMenu(draft.menu, history, washDate)
+  const due = dueStepIds(history, washDate)
+  const plan = loadPlan(() => createDefaultPlan(loadSettings(), createId, menu, due))
+  return applyPeriodic(applyMenu(plan, menu, createId), due, createId)
 }
 
 function App() {
@@ -91,6 +95,7 @@ function App() {
   const washDate = (d: RecordDraft) => resolveWashedAt(d.washedOn, now)
   const plannedMenu = nextMenu(history, washDate(draft))
   const chosenMenu = currentMenu(draft.menu, history, washDate(draft))
+  const dueSteps = dueStepIds(history, washDate(draft))
   const suggestions = visibleSuggestions(suggestNext(history, now), draft.dismissed ?? [], chosenMenu)
 
   const handleTabChange = (next: TabId) => {
@@ -98,12 +103,16 @@ function App() {
     setTab(next)
   }
 
-  // メニューが変わったら、そのメニュー専用の工程を plan に反映する
+  // メニューや周期が来ている工程が変わったら、plan に反映する
+  // 変わったときだけ反映する（ユーザーが消した工程を、メモ入力などで復活させない）
+  const syncPlan = (menu: MenuId, due: ReadonlySet<string>) => {
+    if (menu === chosenMenu && sameIds(due, dueSteps)) return
+    setPlan((p) => applyPeriodic(applyMenu(p, menu, createId), due, createId))
+  }
+
   const handleDraftChange = (next: RecordDraft) => {
     setDraft(next)
-    const menu = currentMenu(next.menu, history, washDate(next))
-    // メニューが変わったときだけ反映する（ユーザーが消した専用工程を、メモ入力などで復活させない）
-    if (menu !== chosenMenu) setPlan((p) => applyMenu(p, menu, createId))
+    syncPlan(currentMenu(next.menu, history, washDate(next)), dueStepIds(history, washDate(next)))
   }
 
   const handleRecord = () => {
@@ -122,7 +131,9 @@ function App() {
     const nextHistory = addRecord(history, record)
     setNow(now)
     setHistory(nextHistory)
-    setPlan((p) => applyMenu(resetPlan(p), nextMenu(nextHistory, now), createId))
+    setPlan((p) =>
+      applyPeriodic(applyMenu(resetPlan(p), nextMenu(nextHistory, now), createId), dueStepIds(nextHistory, now), createId),
+    )
     setDraft(EMPTY_DRAFT)
 
     const [next] = buildSchedule(nextHistory, prefs, now)
@@ -144,8 +155,7 @@ function App() {
     setHistory(nextHistory)
     // 最新の記録が変わると同じ提案 ID が別の記録由来になりうるため、見送りは解除する
     setDraft((d) => (d.dismissed === undefined ? d : { ...d, dismissed: undefined }))
-    const menu = currentMenu(draft.menu, nextHistory, washDate(draft))
-    if (menu !== chosenMenu) setPlan((p) => applyMenu(p, menu, createId))
+    syncPlan(currentMenu(draft.menu, nextHistory, washDate(draft)), dueStepIds(nextHistory, washDate(draft)))
   }
 
   const handleUpdateRecord = (id: string, edit: RecordEdit) => {
@@ -189,7 +199,7 @@ function App() {
             onAdd={(name) => setPlan((p) => addStep(p, name, createId))}
             onRemove={(id) => setPlan((p) => removeStep(p, id))}
             onReset={() => setPlan(resetPlan)}
-            onRestoreDefault={() => setPlan(createDefaultPlan(settings, createId, chosenMenu))}
+            onRestoreDefault={() => setPlan(createDefaultPlan(settings, createId, chosenMenu, dueSteps))}
             onRecord={handleRecord}
           />
         ) : tab === 'schedule' ? (

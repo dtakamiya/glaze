@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from './settings'
 import {
   addStep,
   applyMenu,
+  applyPeriodic,
   applyPureWater,
   completedStepNames,
   createDefaultPlan,
@@ -226,5 +227,41 @@ describe('planProgress', () => {
 
   test('treats custom steps as required', () => {
     expect(planProgress(addStep(tapPlan(), '自作', () => 'x')).total).toBe(6)
+  })
+})
+
+describe('cyclic steps', () => {
+  const none: ReadonlySet<string> = new Set()
+  const wheelDue: ReadonlySet<string> = new Set(['tire-wheel'])
+  const ids = (plan: WashPlan) => plan.steps.map((s) => s.templateId)
+
+  test('createDefaultPlan leaves out the wheel step unless it is due', () => {
+    expect(ids(createDefaultPlan(DEFAULT_SETTINGS, fixedId, undefined, none))).not.toContain('tire-wheel')
+    expect(ids(createDefaultPlan(DEFAULT_SETTINGS, fixedId, undefined, wheelDue))[0]).toBe('tire-wheel')
+  })
+
+  test('applyPeriodic removes a step that is not due and keeps the others', () => {
+    const plan = tapPlan()
+
+    const next = applyPeriodic(plan, none, fixedId)
+
+    expect(ids(next)).toEqual(ids(plan).filter((id) => id !== 'tire-wheel'))
+  })
+
+  test('applyPeriodic puts a due step back at its catalog position', () => {
+    const plan = applyPeriodic(tapPlan(), none, fixedId)
+
+    const next = applyPeriodic(plan, wheelDue, fixedId)
+
+    expect(ids(next)[0]).toBe('tire-wheel')
+    expect(next.steps[0]).toMatchObject({ name: 'タイヤ・ホイール洗浄', done: false })
+  })
+
+  test('applyPeriodic is idempotent and returns the same plan when nothing changes', () => {
+    const plan = tapPlan()
+
+    expect(applyPeriodic(plan, wheelDue, fixedId)).toBe(plan)
+    const removed = applyPeriodic(plan, none, fixedId)
+    expect(applyPeriodic(removed, none, fixedId)).toBe(removed)
   })
 })

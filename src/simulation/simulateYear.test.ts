@@ -56,17 +56,17 @@ describe('洗車が月 1 回のペルソナ（間隔 4 週）', () => {
     expect(summary.overdueWeeks).toBeLessThan(summary.weeks * 0.3)
   })
 
-  test('間が空いても水シミ除去は 3 か月以内に入る', () => {
-    expect(summarize(simulatePersona(NAKAMURA)).mineralGapMax).toBeLessThanOrEqual(100)
+  test('間が空いても水シミ除去は 4 か月以内に入る', () => {
+    expect(summarize(simulatePersona(NAKAMURA)).mineralGapMax).toBeLessThanOrEqual(120)
   })
 })
 
 describe('毎週洗うペルソナ', () => {
-  test('洗う回数が多くても、特別メニューは約 2 か月ごと（年 8 回以下）に収まる', () => {
+  test('洗う回数が多くても、コーティングは 2 週ごと（年 26 回以下）・水シミ除去は 4 週ごと（年 13 回以下）に収まる', () => {
     const { menuCounts } = summarize(simulatePersona(KOBAYASHI))
 
-    expect(menuCounts.mineral).toBeLessThanOrEqual(8)
-    expect(menuCounts.coating).toBeLessThanOrEqual(8)
+    expect(menuCounts.mineral).toBeLessThanOrEqual(13)
+    expect(menuCounts.coating).toBeLessThanOrEqual(26)
   })
 
   test('洗車回数が 2 週ごとの人より多く、1 年で 35 回を超える', () => {

@@ -18,6 +18,8 @@ export interface StepTemplate {
   readonly minutes: number
   /** 設定すると、そのメニューの日だけ plan に入る工程（通常は未設定） */
   readonly menu?: MenuId
+  /** 設定すると、最後に完了してからこの日数がたった洗車にだけ plan に入る周期つき工程（`periodic.ts`） */
+  readonly everyDays?: number
   readonly tips: readonly string[]
 }
 
@@ -28,6 +30,7 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     name: 'タイヤ・ホイール洗浄',
     optional: false,
     minutes: 10,
+    everyDays: 28,
     tips: [
       'ボディより先に、洗車の最初に洗う',
       'キュッキュッと音が鳴らない力加減で、表面の砂を落とすように優しく洗う',
@@ -214,14 +217,14 @@ export interface MenuCycle {
 
 /**
  * 特別メニューは「洗車の回数」ではなく「経過日数」で決める（頻繁に洗う人に増えすぎない・間が空く人に抜けない）。
- * 約 2 か月に 1 回ずつ。最初はコーティング補充 → 水シミ・水アカ除去の順にずらして入れる。
+ * コーティング補充は 2 週に 1 回、水シミ・水アカ除去は 4 週に 1 回。
  */
 export const MENU_CYCLES: Readonly<Record<Exclude<MenuId, 'regular'>, MenuCycle>> = {
-  coating: { firstDays: 28, everyDays: 56 },
-  mineral: { firstDays: 42, everyDays: 56 },
+  coating: { firstDays: 14, everyDays: 14 },
+  mineral: { firstDays: 28, everyDays: 28 },
 }
 
-/** 周期が重なったときの優先順（水シミは放置すると落ちにくくなるため先）。 */
+/** 周期が同じ日に来たときの優先順（水シミは放置すると落ちにくくなるため先）。周期が来てから長い方が先で、同順位のときだけこれに従う。 */
 export const MENU_PRIORITY: readonly Exclude<MenuId, 'regular'>[] = ['mineral', 'coating']
 
 export const MENU_IDS = MENUS.map((menu) => menu.id) as [MenuId, ...MenuId[]]

@@ -69,13 +69,16 @@ function dueDate(state: CycleState, menu: Exclude<MenuId, 'regular'>): Date | nu
   return state.oldest === null ? null : addDays(state.oldest, MENU_CYCLES[menu].firstDays)
 }
 
+/** 周期が来ている特別メニューのうち、来てから一番長いもの（同じ日なら MENU_PRIORITY の順）。無ければ通常洗車。 */
 function pickMenu(state: CycleState, date: Date): MenuId {
-  const day = startOfLocalDay(date)
+  const day = startOfLocalDay(date).getTime()
+  let picked: { readonly menu: MenuId; readonly due: number } | null = null
   for (const menu of MENU_PRIORITY) {
-    const due = dueDate(state, menu)
-    if (due !== null && day.getTime() >= due.getTime()) return menu
+    const due = dueDate(state, menu)?.getTime()
+    if (due === undefined || day < due) continue
+    if (picked === null || due < picked.due) picked = { menu, due }
   }
-  return 'regular'
+  return picked?.menu ?? 'regular'
 }
 
 /**
