@@ -16,7 +16,10 @@ export type WaterType = 'pure' | 'tap'
 export type ConditionTag = 'water-spot' | 'bird-dropping' | 'bug' | 'iron-fallout' | 'tar'
 
 /** 洗車メニュー。ローテーションで「次回やること」を決める。定義は catalog.ts。 */
-export type MenuId = 'regular' | 'coating' | 'mineral'
+export type MenuId = 'regular' | 'coating' | 'mineral' | 'fluorin'
+
+/** 周期で予定に入る特別メニュー（通常洗車以外）。 */
+export type SpecialMenuId = Exclude<MenuId, 'regular'>
 
 export type IntervalWeeks = 1 | 2 | 3 | 4 | 6
 export type HorizonWeeks = 4 | 8 | 12
