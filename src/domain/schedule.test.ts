@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { MENU_CYCLES, MENUS, findMenu, menuName } from './catalog'
-import { buildSchedule, currentMenu, menuFor, nextMenu } from './schedule'
+import { buildSchedule, currentMenu, lastWash, menuFor, nextMenu } from './schedule'
 import type { MenuId, SchedulePrefs, WashRecord } from './types'
 
 const local = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h)
@@ -167,5 +167,30 @@ describe('buildSchedule', () => {
     const items = buildSchedule([], prefs(2, 4), now, 'mineral')
 
     expect(items.map((i) => i.menu)).toEqual(['mineral', 'regular', 'coating'])
+  })
+})
+
+describe('lastWash', () => {
+  test('returns null without history', () => {
+    expect(lastWash([])).toBeNull()
+  })
+
+  test('returns the newest record date and menu regardless of storage order', () => {
+    const history = [record(local(2026, 11, 1), 'regular'), record(local(2026, 11, 10), 'coating'), record(local(2026, 10, 1), 'mineral')]
+
+    const result = lastWash(history)
+
+    expect(result?.menu).toBe('coating')
+    expect(result?.date.getDate()).toBe(10)
+  })
+
+  test('keeps the menu undefined for old records of unknown menu', () => {
+    expect(lastWash([record(local(2026, 11, 1), undefined)])?.menu).toBeUndefined()
+  })
+
+  test('ignores records with an invalid date', () => {
+    const bad = { ...record(local(2026, 11, 1), 'regular'), washedAt: 'invalid' }
+
+    expect(lastWash([bad, record(local(2026, 10, 5), 'mineral')])?.menu).toBe('mineral')
   })
 })

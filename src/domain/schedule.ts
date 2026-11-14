@@ -23,6 +23,20 @@ export function chronological(history: readonly WashRecord[]): WashRecord[] {
     .sort((a, b) => new Date(a.washedAt).getTime() - new Date(b.washedAt).getTime())
 }
 
+export interface LastWash {
+  /** 洗車した日（ローカル暦日の 0 時） */
+  readonly date: Date
+  /** 実施したメニュー。旧記録など不明なときは undefined */
+  readonly menu: MenuId | undefined
+}
+
+/** 一番新しい洗車の日付とメニュー。履歴が無い（日付が有効な記録が無い）ときは null。 */
+export function lastWash(history: readonly WashRecord[]): LastWash | null {
+  const latest = chronological(history).at(-1)
+  if (latest === undefined) return null
+  return { date: startOfLocalDay(new Date(latest.washedAt)), menu: latest.menu }
+}
+
 /** 特別メニューの周期を数えるための状態。履歴から作り、予定を先へ進めるときも使う。 */
 interface CycleState {
   /** 最初の記録の日（履歴が無ければ null） */

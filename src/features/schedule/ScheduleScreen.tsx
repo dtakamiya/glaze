@@ -1,5 +1,5 @@
-import { findMenu } from '../../domain/catalog'
-import type { ScheduleItem } from '../../domain/schedule'
+import { findMenu, menuName } from '../../domain/catalog'
+import type { LastWash, ScheduleItem } from '../../domain/schedule'
 import type { Suggestion } from '../../domain/suggestion'
 import { HORIZON_WEEKS_OPTIONS, INTERVAL_WEEKS_OPTIONS } from '../../domain/settings'
 import { formatMonthDay, toDateString } from '../../lib/format'
@@ -8,6 +8,8 @@ import type { HorizonWeeks, IntervalWeeks, MenuId, SchedulePrefs } from '../../d
 
 interface ScheduleScreenProps {
   items: readonly ScheduleItem[]
+  /** 前回の洗車（履歴が無ければ null） */
+  lastWash: LastWash | null
   prefs: SchedulePrefs
   onPrefsChange: (prefs: SchedulePrefs) => void
   suggestions: readonly Suggestion[]
@@ -26,6 +28,7 @@ function pickOption<T extends number>(options: readonly T[], value: string, fall
 
 export function ScheduleScreen({
   items,
+  lastWash,
   prefs,
   onPrefsChange,
   suggestions,
@@ -79,6 +82,13 @@ export function ScheduleScreen({
       </div>
 
       <SuggestionList suggestions={suggestions} onAdopt={onAdopt} onDismiss={onDismiss} />
+
+      {lastWash !== null && (
+        <p className="schedule__last">
+          前回の洗車: {formatMonthDay(lastWash.date)}
+          {lastWash.menu !== undefined && `　${menuName(lastWash.menu)}`}
+        </p>
+      )}
 
       <ol className="schedule">
         {items.map((item, index) => {

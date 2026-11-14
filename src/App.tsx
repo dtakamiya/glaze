@@ -20,7 +20,7 @@ import {
   toggleStep,
 } from './domain/plan'
 import { daysSinceLastWash } from './domain/reminder'
-import { buildSchedule, currentMenu, nextMenu } from './domain/schedule'
+import { buildSchedule, currentMenu, lastWash, nextMenu } from './domain/schedule'
 import { setPureWater } from './domain/settings'
 import { suggestNext, visibleSuggestions } from './domain/suggestion'
 import type { MenuId, RecordDraft } from './domain/types'
@@ -187,6 +187,7 @@ function App() {
         ) : tab === 'schedule' ? (
           <ScheduleScreen
             items={buildSchedule(history, prefs, now, draft.menu)}
+            lastWash={lastWash(history)}
             prefs={prefs}
             onPrefsChange={setPrefs}
             suggestions={suggestions}

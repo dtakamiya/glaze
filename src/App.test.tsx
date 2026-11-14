@@ -638,6 +638,20 @@ describe('洗車計画タブ', () => {
     expect(within(items[2]).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
   })
 
+  test('前回の洗車（日付とメニュー）が出る。履歴が無ければ出ない', async () => {
+    const { user } = setup()
+    await openSchedule(user)
+    expect(screen.queryByText(/^前回の洗車:/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: '洗車プラン' }))
+    await user.selectOptions(screen.getByRole('combobox', { name: '今回のメニュー' }), 'mineral')
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+    await openSchedule(user)
+
+    expect(screen.getByText(/^前回の洗車:.*水シミ・水アカ除去/)).toBeInTheDocument()
+  })
+
   test('「次回」カードの「この内容で洗車する」で洗車プランに移る。先の予定にはボタンがない', async () => {
     const { user } = setup()
     await openSchedule(user)

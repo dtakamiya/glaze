@@ -369,6 +369,12 @@ textarea {
   margin-top: 12px;
 }
 
+.schedule__last {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
 /* step extras */
 .step {
   flex-wrap: wrap;
