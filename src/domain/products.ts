@@ -18,7 +18,7 @@ export const PRODUCTS: readonly Product[] = [
   { name: 'スリークシャンプー', kind: 'chemical', note: '中性・300 倍濃縮のカーシャンプー' },
   { name: 'コロイドクレンザー', kind: 'chemical', note: 'マルチクリーナー（黒筋・虫汚れ）' },
   { name: 'ミネラルリムーバー', kind: 'chemical', note: '水垢クリーナー（酸性）。手袋必須。ガラス・メッキ・ゴムに付けない' },
-  { name: 'オイルステインリムーバー', kind: 'chemical', note: 'タール・ピッチ・油汚れ・タイヤカス（ボディ用）' },
+  { name: 'オイルステインリムーバー', kind: 'chemical', note: 'タール・ピッチ・油汚れ・タイヤカス（ボディ用）。ゴム・タイヤ・無塗装樹脂には付けない' },
   { name: 'インセクトリムーバー', kind: 'chemical', note: '虫・鳥フン除去（アルカリ性）' },
   { name: 'アシッドホイールクレンザー', kind: 'chemical', note: 'ホイールのブレーキダスト・黄ばみ除去（酸性）。高輝度塗装・切削・アルマイト・メッキは不可' },
   { name: 'ナノダイヤモンドトナー', kind: 'chemical', note: 'コーティング剤（超微撥水・防汚）' },

@@ -75,4 +75,12 @@ describe('safety notes on strong chemicals', () => {
       expect(note).toContain(keyword)
     }
   })
+
+  test('keeps the oil stain remover off rubber, tires and unpainted resin', () => {
+    const note = noteOf('オイルステインリムーバー')
+
+    for (const keyword of ['ゴム', 'タイヤ', '無塗装']) {
+      expect(note).toContain(keyword)
+    }
+  })
 })

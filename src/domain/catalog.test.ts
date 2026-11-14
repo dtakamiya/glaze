@@ -132,4 +132,32 @@ describe('beginner guidance (avoid / why)', () => {
     expect(lines).toMatch(/ナノダイヤモンドトナー/)
     expect(templateOf('menu-fluorin').avoid?.join('\n')).toMatch(/単独|だけ/)
   })
+
+  test('gives interior cleaning a water-first routine and lists what to avoid', () => {
+    const lines = allLines('interior')
+
+    expect(lines).toContain('水拭き')
+    for (const keyword of ['艶出し', 'メラミン', 'メーター']) {
+      expect(templateOf('interior').avoid?.join('\n')).toContain(keyword)
+    }
+  })
+
+  test('explains iron fallout removal without a clay bar in the mineral step', () => {
+    const lines = allLines('menu-mineral')
+
+    for (const keyword of ['鉄粉', '粘土', '引っ張', '水気']) {
+      expect(lines).toContain(keyword)
+    }
+  })
+
+  test('explains tar and pitch removal with the oil stain remover and where it must not touch', () => {
+    const lines = allLines('bug-bird')
+    const avoid = templateOf('bug-bird').avoid?.join('\n') ?? ''
+
+    expect(lines).toContain('タール')
+    expect(lines).toContain('オイルステインリムーバー')
+    for (const keyword of ['ゴム', '無塗装', 'ラッピング', 'グリス']) {
+      expect(avoid).toContain(keyword)
+    }
+  })
 })
