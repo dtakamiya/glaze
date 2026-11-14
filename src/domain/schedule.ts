@@ -1,6 +1,6 @@
 import { MENU_CYCLES, MENU_PRIORITY } from './catalog'
 import { calendarDaysBetween, latestWashDate, startOfLocalDay } from './reminder'
-import type { MenuId, SchedulePrefs, WashRecord } from './types'
+import type { MenuId, SchedulePrefs, SpecialMenuId, WashRecord } from './types'
 
 export interface ScheduleItem {
   /** 予定日（ローカル暦日の 0 時） */
@@ -41,14 +41,18 @@ export function lastWash(history: readonly WashRecord[]): LastWash | null {
 interface CycleState {
   /** 最初の記録の日（履歴が無ければ null） */
   readonly oldest: Date | null
-  readonly last: Readonly<Partial<Record<Exclude<MenuId, 'regular'>, Date>>>
+  readonly last: Readonly<Partial<Record<SpecialMenuId, Date>>>
+}
+
+function isSpecialMenu(menu: MenuId | undefined): menu is SpecialMenuId {
+  return menu !== undefined && menu in MENU_CYCLES
 }
 
 function cycleState(history: readonly WashRecord[]): CycleState {
   const ordered = chronological(history)
-  const last: Partial<Record<Exclude<MenuId, 'regular'>, Date>> = {}
+  const last: Partial<Record<SpecialMenuId, Date>> = {}
   for (const record of ordered) {
-    if (record.menu === 'coating' || record.menu === 'mineral') last[record.menu] = startOfLocalDay(new Date(record.washedAt))
+    if (isSpecialMenu(record.menu)) last[record.menu] = startOfLocalDay(new Date(record.washedAt))
   }
   return { oldest: ordered.length === 0 ? null : startOfLocalDay(new Date(ordered[0].washedAt)), last }
 }
@@ -63,7 +67,7 @@ function performed(state: CycleState, menu: MenuId, date: Date): CycleState {
 }
 
 /** 特別メニューが予定に入る日。履歴が無ければ null。 */
-function dueDate(state: CycleState, menu: Exclude<MenuId, 'regular'>): Date | null {
+function dueDate(state: CycleState, menu: SpecialMenuId): Date | null {
   const last = state.last[menu]
   if (last !== undefined) return addDays(last, MENU_CYCLES[menu].everyDays)
   return state.oldest === null ? null : addDays(state.oldest, MENU_CYCLES[menu].firstDays)

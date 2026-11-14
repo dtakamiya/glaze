@@ -21,6 +21,7 @@ export interface Summary {
   readonly historyBytes: number
   readonly mineralGapMax: number | null
   readonly coatingGapMax: number | null
+  readonly fluorinGapMax: number | null
 }
 
 function round(value: number): number {
@@ -41,7 +42,7 @@ function maxGap(result: SimulationResult, menu: MenuId): number | null {
 export function summarize(result: SimulationResult): Summary {
   const ordered = [...result.history].sort((a, b) => a.washedAt.localeCompare(b.washedAt))
   const gaps = ordered.slice(1).map((record, i) => calendarDaysBetween(new Date(record.washedAt), new Date(ordered[i].washedAt)))
-  const menuCounts: Record<MenuId, number> = { regular: 0, coating: 0, mineral: 0 }
+  const menuCounts: Record<MenuId, number> = { regular: 0, coating: 0, mineral: 0, fluorin: 0 }
   for (const record of ordered) if (record.menu !== undefined) menuCounts[record.menu] += 1
 
   const suggestionShown: Record<string, number> = {}
@@ -80,6 +81,7 @@ export function summarize(result: SimulationResult): Summary {
     historyBytes: JSON.stringify(result.history).length,
     mineralGapMax: maxGap(result, 'mineral'),
     coatingGapMax: maxGap(result, 'coating'),
+    fluorinGapMax: maxGap(result, 'fluorin'),
   }
 }
 
@@ -90,8 +92,8 @@ export function formatReport(results: readonly SimulationResult[]): string {
     lines.push(
       `## ${result.persona.name}（${result.persona.profile}）`,
       `- 洗車 ${s.washes} 回 / 間隔 平均 ${s.gapAverage} 日・最大 ${s.gapMax} 日`,
-      `- メニュー: 通常 ${s.menuCounts.regular} / コーティング ${s.menuCounts.coating} / 水シミ除去 ${s.menuCounts.mineral}（予定と違う実施 ${s.deviations} 回）`,
-      `- 水シミ除去の最大間隔 ${s.mineralGapMax ?? 'なし'} 日 / コーティング補充の最大間隔 ${s.coatingGapMax ?? 'なし'} 日`,
+      `- メニュー: 通常 ${s.menuCounts.regular} / コーティング ${s.menuCounts.coating} / 水シミ除去 ${s.menuCounts.mineral} / フルオリンセラム ${s.menuCounts.fluorin}（予定と違う実施 ${s.deviations} 回）`,
+      `- 水シミ除去の最大間隔 ${s.mineralGapMax ?? 'なし'} 日 / コーティング補充の最大間隔 ${s.coatingGapMax ?? 'なし'} 日 / フルオリンセラムの最大間隔 ${s.fluorinGapMax ?? 'なし'} 日`,
       `- メニュー提案が出た割合 ${s.menuSuggestionRate}、採用 ${s.adopted}、見送り ${s.dismissed}、同じ提案の最長連続 ${s.longestSameSuggestionStreak} 回`,
       `- 提案の内訳: ${JSON.stringify(s.suggestionShown)}`,
       `- 未実施の必須工程 計 ${s.skippedTotal} 件、「前回未実施」注意の出現率 ${s.noteSkippedRate}`,

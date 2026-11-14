@@ -56,8 +56,11 @@ describe('洗車が月 1 回のペルソナ（間隔 4 週）', () => {
     expect(summary.overdueWeeks).toBeLessThan(summary.weeks * 0.3)
   })
 
-  test('間が空いても水シミ除去は 4 か月以内に入る', () => {
-    expect(summarize(simulatePersona(NAKAMURA)).mineralGapMax).toBeLessThanOrEqual(120)
+  test('間が空いても水シミ除去・フルオリンセラムは 5 か月以内に入る', () => {
+    // 4 週ごとの洗車では水シミ除去とフルオリンセラムが交互になり、それぞれ 8 週ごとになる
+    const summary = summarize(simulatePersona(NAKAMURA))
+    expect(summary.mineralGapMax).toBeLessThanOrEqual(150)
+    expect(summary.fluorinGapMax).toBeLessThanOrEqual(150)
   })
 })
 

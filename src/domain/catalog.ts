@@ -1,4 +1,4 @@
-import type { ConditionTag, MenuId } from './types'
+import type { ConditionTag, MenuId, SpecialMenuId } from './types'
 
 /**
  * 標準工程のカタログ。コツ・任意フラグ・純水/水道水の対応はここ（コード）に持ち、
@@ -125,7 +125,16 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     tips: [
       '拭き上げの後に、油分なしのスプレーコーティング剤（シーラント）を丁寧に塗り直す',
       '油分入りのワックスや厚いコーティングは汚れを取り込むため使わない',
+      '使う製品はナノダイヤモンドトナー',
     ],
+  },
+  {
+    id: 'menu-fluorin',
+    name: 'フルオリンセラム施工',
+    optional: false,
+    minutes: 15,
+    menu: 'fluorin',
+    tips: ['拭き上げの後に、フルオリンセラムを製品の説明どおりに施工する', '施工の方法・乾燥時間は製品の説明で確認する'],
   },
   {
     id: 'window',
@@ -197,13 +206,18 @@ export const MENUS: readonly MenuTemplate[] = [
   {
     id: 'coating',
     name: 'コーティング補充',
-    summary: '通常洗車に加えて、油分なしのスプレーコーティング剤を丁寧に塗り直す日。',
+    summary: '通常洗車に加えて、ナノダイヤモンドトナーなど油分なしのスプレーコーティング剤を丁寧に塗り直す日（2 週に 1 回）。',
   },
   {
     id: 'mineral',
     name: '水シミ・水アカ除去',
     summary:
       '通常洗車で落ちない水シミ・水アカをミネラルリムーバー等で落とす日。切削仕上げのホイールなど、使えない場所は製品の説明で確認する。',
+  },
+  {
+    id: 'fluorin',
+    name: 'フルオリンセラム施工',
+    summary: '通常洗車に加えて、フルオリンセラムを施工する日（4 週に 1 回）。',
   },
 ]
 
@@ -217,15 +231,16 @@ export interface MenuCycle {
 
 /**
  * 特別メニューは「洗車の回数」ではなく「経過日数」で決める（頻繁に洗う人に増えすぎない・間が空く人に抜けない）。
- * コーティング補充は 2 週に 1 回、水シミ・水アカ除去は 4 週に 1 回。
+ * コーティング補充（ナノダイヤモンドトナー）は 2 週に 1 回、水シミ・水アカ除去とフルオリンセラム施工は 4 週に 1 回。
  */
-export const MENU_CYCLES: Readonly<Record<Exclude<MenuId, 'regular'>, MenuCycle>> = {
+export const MENU_CYCLES: Readonly<Record<SpecialMenuId, MenuCycle>> = {
   coating: { firstDays: 14, everyDays: 14 },
   mineral: { firstDays: 28, everyDays: 28 },
+  fluorin: { firstDays: 28, everyDays: 28 },
 }
 
 /** 周期が同じ日に来たときの優先順（水シミは放置すると落ちにくくなるため先）。周期が来てから長い方が先で、同順位のときだけこれに従う。 */
-export const MENU_PRIORITY: readonly Exclude<MenuId, 'regular'>[] = ['mineral', 'coating']
+export const MENU_PRIORITY: readonly SpecialMenuId[] = ['mineral', 'fluorin', 'coating']
 
 export const MENU_IDS = MENUS.map((menu) => menu.id) as [MenuId, ...MenuId[]]
 
