@@ -242,6 +242,21 @@ describe('settings and draft storage', () => {
     expect(loadHistory()).toEqual([])
   })
 
+  test('keeps a record whose menu id is unknown (e.g. added by a newer version) and treats the menu as unknown', () => {
+    const known = record({ id: 'known', menu: 'coating' })
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify([known, { ...record({ id: 'newer' }), menu: 'future-menu', plannedMenu: 'future-menu' }]),
+    )
+
+    const loaded = loadHistory()
+
+    expect(loaded.map((r) => r.id)).toEqual(['known', 'newer'])
+    expect(loaded[1].menu).toBeUndefined()
+    expect(loaded[1].plannedMenu).toBeUndefined()
+    expect(localStorage.getItem(`${HISTORY_KEY}:corrupt`)).toBeNull()
+  })
+
   test('discards an unknown menu id', () => {
     silenceWarn()
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...EMPTY_DRAFT, menu: 'unknown' }))

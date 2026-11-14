@@ -20,7 +20,8 @@ const noteSchema = z.string().max(MAX_NOTE_LENGTH)
 const chemicalsSchema = z.string().max(MAX_CHEMICALS_LENGTH)
 const conditionsSchema = z.array(z.enum(CONDITION_VALUES))
 // 任意。未設定は「不明（記録）」「予定に従う（下書き）」。
-const menuSchema = z.enum(MENU_IDS).optional()
+// 知らないメニュー（新しい版が追加したもの）は「未設定」として読み、履歴全体が不正扱いになるのを避ける。
+const menuSchema = z.enum(MENU_IDS).optional().catch(undefined)
 
 const recordSchema = z.object({
   id: z.string().min(1),
