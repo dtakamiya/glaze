@@ -1,6 +1,6 @@
 import type { HorizonWeeks, IntervalWeeks, SchedulePrefs, WashSettings } from './types'
 
-export const DEFAULT_SETTINGS: WashSettings = { hasPureWater: false }
+export const DEFAULT_SETTINGS: WashSettings = { hasPureWater: true }
 
 export function setPureWater(settings: WashSettings, hasPureWater: boolean): WashSettings {
   return { ...settings, hasPureWater }

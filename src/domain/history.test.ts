@@ -42,7 +42,7 @@ describe('createRecord', () => {
       washedAt: '2026-11-13T10:00:00.000Z',
       steps: ['予洗い', '拭き上げ'],
       note: '晴れ',
-      waterType: 'tap',
+      waterType: 'pure',
       chemicals: 'スリーク',
       conditions: ['bug'],
       menu: undefined,
