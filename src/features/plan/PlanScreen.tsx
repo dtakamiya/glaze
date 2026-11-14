@@ -3,6 +3,7 @@ import { findTemplate } from '../../domain/catalog'
 import { MAX_STEP_NAME_LENGTH, planProgress } from '../../domain/plan'
 import { formatMinutes, planTiming } from '../../domain/timing'
 import type { MenuId, RecordDraft, WashPlan, WashSettings } from '../../domain/types'
+import { FirstRunGuide } from './FirstRunGuide'
 import { RecordForm } from './RecordForm'
 import { ReminderBanner } from './ReminderBanner'
 import { TipPanel, TipToggle } from './StepTip'
@@ -79,16 +80,22 @@ export function PlanScreen({
         {notice !== null && <p className="toast">{notice}</p>}
       </div>
 
+      {daysSinceLastWash === null && <FirstRunGuide />}
+
       <ReminderBanner days={daysSinceLastWash} intervalWeeks={intervalWeeks} />
 
       <label className="toggle">
         <input
           type="checkbox"
+          aria-describedby="pure-water-help"
           checked={settings.hasPureWater}
           onChange={(e) => onPureWaterChange(e.target.checked)}
         />
         <span>純水器を使う（すすぎの工程が切り替わります）</span>
       </label>
+      <p id="pure-water-help" className="hint">
+        純水器は、ミネラルを取り除いた水をつくる設備です。洗車場にある、またはすすぎに純水が使えるときにオンにします。
+      </p>
 
       <div className="progress">
         <div

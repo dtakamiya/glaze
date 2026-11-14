@@ -98,6 +98,27 @@ describe('工程のコツ', () => {
   })
 })
 
+describe('初回の案内', () => {
+  test('履歴が無いうちは使い方の案内が出て、最初の記録のあとに消える', async () => {
+    const { user } = setup()
+
+    expect(screen.getByRole('region', { name: 'はじめに' })).toHaveTextContent('施工を記録')
+
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+
+    expect(screen.queryByRole('region', { name: 'はじめに' })).not.toBeInTheDocument()
+  })
+
+  test('純水器の説明が、トグルの説明として結び付いている', () => {
+    setup()
+
+    const toggle = screen.getByRole('checkbox', { name: /純水器を使う/ })
+
+    expect(toggle).toHaveAccessibleDescription(/ミネラル/)
+  })
+})
+
 describe('純水設定', () => {
   test('切り替えるとすすぎ工程が入れ替わりチェック状態は維持される', async () => {
     const { user } = setup()
