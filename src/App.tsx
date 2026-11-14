@@ -111,6 +111,11 @@ function App() {
     window.scrollTo({ top: 0 })
   }
 
+  const handleStartWash = () => {
+    handleTabChange('plan')
+    window.scrollTo({ top: 0 })
+  }
+
   const handleAdoptMenu = (menu: MenuId) => handleDraftChange({ ...draft, menu })
   const handleDismissSuggestion = (id: string) => setDraft(dismissSuggestion(draft, id))
   const handleClearMenuOverride = () => handleDraftChange({ ...draft, menu: undefined })
@@ -169,6 +174,7 @@ function App() {
             onAdopt={handleAdoptMenu}
             onDismiss={handleDismissSuggestion}
             onClearOverride={handleClearMenuOverride}
+            onStartWash={handleStartWash}
           />
         ) : (
           <HistoryScreen history={history} onRemove={handleRemoveRecord} />

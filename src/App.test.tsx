@@ -557,6 +557,29 @@ describe('洗車計画タブ', () => {
     expect(within(items[2]).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
   })
 
+  test('「次回」カードの「この内容で洗車する」で洗車プランに移る。先の予定にはボタンがない', async () => {
+    const { user } = setup()
+    await openSchedule(user)
+
+    expect(screen.getAllByRole('button', { name: 'この内容で洗車する' })).toHaveLength(1)
+    const [next] = screen.getAllByRole('article')
+    await user.click(within(next).getByRole('button', { name: 'この内容で洗車する' }))
+
+    expect(screen.getByRole('heading', { name: '洗車プラン' })).toBeInTheDocument()
+  })
+
+  test('選んだメニューの専用工程が入った状態で開き、チェックは変わらない', async () => {
+    const { user } = setup()
+    await user.selectOptions(screen.getByRole('combobox', { name: '今回のメニュー' }), 'mineral')
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await openSchedule(user)
+
+    await user.click(screen.getByRole('button', { name: 'この内容で洗車する' }))
+
+    expect(screen.getByRole('checkbox', { name: '水シミ・水アカ除去' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: WHEELS })).toBeChecked()
+  })
+
   test('記録すると次回は 2 週間後の通常洗車で、その次の回にコーティング補充が入る', async () => {
     const { user } = setup()
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))

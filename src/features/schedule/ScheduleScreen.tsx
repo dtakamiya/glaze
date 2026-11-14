@@ -16,6 +16,8 @@ interface ScheduleScreenProps {
   onAdopt: (menu: MenuId) => void
   onDismiss: (suggestionId: string) => void
   onClearOverride: () => void
+  /** 「次回」の予定で洗車を始める（洗車プランへ移る） */
+  onStartWash: () => void
 }
 
 function pickOption<T extends number>(options: readonly T[], value: string, fallback: T): T {
@@ -31,6 +33,7 @@ export function ScheduleScreen({
   onAdopt,
   onDismiss,
   onClearOverride,
+  onStartWash,
 }: ScheduleScreenProps) {
   return (
     <section className="screen" aria-labelledby="schedule-title">
@@ -90,6 +93,11 @@ export function ScheduleScreen({
                 {item.overdueDays > 0 && <p className="schedule__overdue">予定日を {item.overdueDays} 日過ぎています</p>}
                 <h2 className="schedule__menu">{menu?.name ?? item.menu}</h2>
                 {menu && <p className="schedule__summary">{menu.summary}</p>}
+                {index === 0 && (
+                  <button type="button" className="button button--secondary" onClick={onStartWash}>
+                    この内容で洗車する
+                  </button>
+                )}
                 {index === 0 && menuOverridden && (
                   <button type="button" className="button button--ghost schedule__reset" onClick={onClearOverride}>
                     予定どおりに戻す
