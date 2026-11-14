@@ -115,7 +115,7 @@ describe('記録の編集', () => {
     const memo = screen.getByRole('textbox', { name: 'メモ' })
     await user.clear(memo)
     await user.type(memo, '直したメモ')
-    await user.type(screen.getByRole('textbox', { name: '使用ケミカル' }), 'ケミカルX')
+    await user.type(screen.getByRole('textbox', { name: '使用ケミカル・道具' }), 'ケミカルX')
     await user.selectOptions(screen.getByRole('combobox', { name: '水の種類' }), 'pure')
     await user.click(screen.getByRole('button', { name: '水シミ' }))
     await user.click(screen.getByRole('button', { name: '保存' }))
@@ -267,7 +267,7 @@ describe('施工の記録と履歴画面', () => {
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))
     await user.click(screen.getByRole('checkbox', { name: SHAMPOO }))
     await user.selectOptions(screen.getByRole('combobox', { name: '水の種類' }), 'pure')
-    await user.type(screen.getByRole('textbox', { name: '使用ケミカル' }), 'スリーク')
+    await user.type(screen.getByRole('textbox', { name: '使用ケミカル・道具' }), 'スリーク')
     await user.click(screen.getByRole('button', { name: '鳥フン' }))
     await user.type(screen.getByRole('textbox', { name: 'メモ' }), '晴れ・気温15度')
 
@@ -662,8 +662,52 @@ describe('過去日で記録するときの予定メニュー', () => {
   })
 })
 
+describe('製品の選択', () => {
+  const chemicals = () => screen.getByRole('textbox', { name: '使用ケミカル・道具' })
+
+  test('製品を押すと入力欄に入り、もう一度押すと外れる', async () => {
+    const { user } = setup()
+
+    await user.click(screen.getByRole('button', { name: 'スリークシャンプー' }))
+    await user.click(screen.getByRole('button', { name: '洗車スポンジ' }))
+
+    expect(chemicals()).toHaveValue('スリークシャンプー、洗車スポンジ')
+    expect(screen.getByRole('button', { name: 'スリークシャンプー' })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'スリークシャンプー' }))
+
+    expect(chemicals()).toHaveValue('洗車スポンジ')
+    expect(screen.getByRole('button', { name: 'スリークシャンプー' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  test('自由入力と併用でき、記録すると履歴に残る', async () => {
+    const { user } = setup()
+    await user.type(chemicals(), '他社ワックス')
+    await user.click(screen.getByRole('button', { name: 'コロイドクレンザー' }))
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+
+    await user.click(screen.getByRole('tab', { name: '施工履歴' }))
+    expect(screen.getByText('使用: 他社ワックス、コロイドクレンザー')).toBeInTheDocument()
+  })
+
+  test('履歴の編集フォームでも製品を選べる', async () => {
+    const { user } = setup()
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+    await user.click(screen.getByRole('tab', { name: '施工履歴' }))
+
+    await user.click(screen.getByRole('button', { name: /の記録を編集/ }))
+    await user.click(screen.getByRole('button', { name: 'ミネラルリムーバー' }))
+    await user.click(screen.getByRole('button', { name: '保存' }))
+
+    expect(screen.getByText('使用: ミネラルリムーバー')).toBeInTheDocument()
+  })
+})
+
 describe('ケミカルの再利用', () => {
-  const chemicals = () => screen.getByRole('textbox', { name: '使用ケミカル' })
+  const chemicals = () => screen.getByRole('textbox', { name: '使用ケミカル・道具' })
 
   test('履歴が無いうちは候補が出ない', () => {
     setup()
@@ -859,14 +903,14 @@ describe('入力中の内容', () => {
   test('再起動してもメモ・ケミカル・状態タグが残る', async () => {
     const { user, unmount } = setup()
     await user.type(screen.getByRole('textbox', { name: 'メモ' }), '下書き')
-    await user.type(screen.getByRole('textbox', { name: '使用ケミカル' }), 'A液')
+    await user.type(screen.getByRole('textbox', { name: '使用ケミカル・道具' }), 'A液')
     await user.click(screen.getByRole('button', { name: '水シミ' }))
     unmount()
 
     setup()
 
     expect(screen.getByRole('textbox', { name: 'メモ' })).toHaveValue('下書き')
-    expect(screen.getByRole('textbox', { name: '使用ケミカル' })).toHaveValue('A液')
+    expect(screen.getByRole('textbox', { name: '使用ケミカル・道具' })).toHaveValue('A液')
     expect(screen.getByRole('button', { name: '水シミ' })).toHaveAttribute('aria-pressed', 'true')
   })
 

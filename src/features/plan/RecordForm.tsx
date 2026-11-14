@@ -1,6 +1,7 @@
 import { CONDITION_TAGS, MENUS } from '../../domain/catalog'
 import { toggleCondition } from '../../domain/draft'
 import { MAX_CHEMICALS_LENGTH, MAX_NOTE_LENGTH } from '../../domain/history'
+import { ProductPicker } from './ProductPicker'
 import type { MenuId, RecordDraft, WashSettings, WaterType } from '../../domain/types'
 
 interface RecordFormProps {
@@ -75,11 +76,16 @@ export function RecordForm({ draft, settings, plannedMenu, today, recentChemical
         </select>
       </label>
 
+      <ProductPicker
+        value={draft.chemicals}
+        maxLength={MAX_CHEMICALS_LENGTH}
+        onChange={(chemicals) => onDraftChange({ ...draft, chemicals })}
+      />
       <label className="field">
-        <span>使用ケミカル</span>
+        <span>使用ケミカル・道具</span>
         <input
           type="text"
-          placeholder="例: スリーク シャンプー"
+          placeholder="上で選ぶか、ほかの製品を自由に入力"
           maxLength={MAX_CHEMICALS_LENGTH}
           value={draft.chemicals}
           onChange={(e) => onDraftChange({ ...draft, chemicals: e.target.value })}

@@ -257,6 +257,17 @@ describe('settings and draft storage', () => {
   })
 })
 
+describe('chemicals length', () => {
+  test('accepts up to 200 characters and rejects more', () => {
+    silenceWarn()
+    saveHistory([record({ chemicals: 'あ'.repeat(200) })])
+    expect(loadHistory()[0].chemicals).toHaveLength(200)
+
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([record({ chemicals: 'あ'.repeat(201) })]))
+    expect(loadHistory()).toEqual([])
+  })
+})
+
 describe('schedule prefs storage', () => {
   test('defaults to a 2-week interval and 8-week horizon and round-trips', () => {
     expect(loadSchedulePrefs()).toEqual({ intervalWeeks: 2, horizonWeeks: 8 })

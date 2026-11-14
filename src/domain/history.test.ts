@@ -62,7 +62,7 @@ describe('createRecord', () => {
     )
 
     expect(result.note).toHaveLength(500)
-    expect(result.chemicals).toHaveLength(100)
+    expect(result.chemicals).toHaveLength(MAX_CHEMICALS_LENGTH)
   })
 
   test('follows the pure-water setting when the draft leaves water unset', () => {

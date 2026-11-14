@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CONDITION_TAGS } from '../../domain/catalog'
 import { MAX_CHEMICALS_LENGTH, MAX_NOTE_LENGTH, type RecordEdit } from '../../domain/history'
+import { ProductPicker } from '../plan/ProductPicker'
 import type { ConditionTag, WaterType } from '../../domain/types'
 
 interface RecordEditFormProps {
@@ -40,8 +41,13 @@ export function RecordEditForm({ initial, onSave, onCancel }: RecordEditFormProp
           <option value="tap">水道水</option>
         </select>
       </label>
+      <ProductPicker
+        value={edit.chemicals}
+        maxLength={MAX_CHEMICALS_LENGTH}
+        onChange={(chemicals) => setEdit({ ...edit, chemicals })}
+      />
       <label className="field">
-        <span>使用ケミカル</span>
+        <span>使用ケミカル・道具</span>
         <input
           type="text"
           maxLength={MAX_CHEMICALS_LENGTH}
