@@ -27,6 +27,7 @@ npm run build && npm run preview   # Service Worker を有効にした確認
 ```
 
 - Service Worker と `crypto.randomUUID` は secure context（https / localhost）限定です。実機で PWA を試すときは https で配信してください。
+- GitHub Pages へは `main` への push で自動デプロイされます（`.github/workflows/deploy.yml`）。リポジトリ名のパスで配信するため、ビルド時に `VITE_BASE=/glaze/` を指定します。ローカルでは未指定（`/`）です。
 - PWA アイコンの再生成: `npm run generate-pwa-assets`（元画像: `public/favicon.svg`）。
 - 構成と設計ルールは [CLAUDE.md](CLAUDE.md) を参照してください。
 
