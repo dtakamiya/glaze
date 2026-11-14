@@ -449,6 +449,19 @@ textarea {
 .tip li + li {
   margin-top: 4px;
 }
+.tip__section + .tip__section {
+  margin-top: 10px;
+}
+.tip__title {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.tip__section--avoid {
+  padding-left: 8px;
+  border-left: 3px solid var(--color-muted);
+}
 
 /* record form extras */
 .record {
