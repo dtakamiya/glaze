@@ -192,7 +192,7 @@ export const MENUS: readonly MenuTemplate[] = [
   {
     id: 'regular',
     name: '通常洗車',
-    summary: '基本の洗車。ホイール→予洗い→シャンプー→すすぎ→拭き上げまで。',
+    summary: '基本の洗車。予洗い→シャンプー→すすぎ→拭き上げまで。タイヤ・ホイール洗浄は 4 週に 1 回だけ加わる。',
   },
   {
     id: 'coating',
