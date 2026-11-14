@@ -42,6 +42,10 @@ describe('daysSinceLastWash', () => {
 
 describe('reminderStatus', () => {
   test.each([
+    [6, 1, 'ok'],
+    [7, 1, 'due'],
+    [14, 1, 'due'],
+    [15, 1, 'overdue'],
     [null, 2, 'none'],
     [0, 2, 'ok'],
     [13, 2, 'ok'],

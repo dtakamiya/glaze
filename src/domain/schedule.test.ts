@@ -31,6 +31,14 @@ describe('menus', () => {
   })
 })
 
+describe('buildSchedule with a 1-week interval', () => {
+  test('lists a wash every 7 days up to the horizon', () => {
+    const items = buildSchedule([record(local(2026, 11, 1), 'regular')], prefs(1, 4), local(2026, 11, 2))
+
+    expect(items.map((i) => ymd(i.date))).toEqual(['11/8', '11/15', '11/22', '11/29'])
+  })
+})
+
 describe('menuFor', () => {
   test('is a regular wash when there is no history', () => {
     expect(menuFor([], local(2026, 11, 14))).toBe('regular')

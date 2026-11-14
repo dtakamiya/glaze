@@ -267,6 +267,12 @@ describe('schedule prefs storage', () => {
     expect(localStorage.getItem(SCHEDULE_KEY)).not.toBeNull()
   })
 
+  test('accepts a 1-week interval', () => {
+    saveSchedulePrefs({ intervalWeeks: 1, horizonWeeks: 4 })
+
+    expect(loadSchedulePrefs()).toEqual({ intervalWeeks: 1, horizonWeeks: 4 })
+  })
+
   test('falls back to defaults for values outside the allowed options', () => {
     silenceWarn()
     localStorage.setItem(SCHEDULE_KEY, JSON.stringify({ intervalWeeks: 5, horizonWeeks: 8 }))
