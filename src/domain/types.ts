@@ -18,7 +18,7 @@ export type ConditionTag = 'water-spot' | 'bird-dropping' | 'bug' | 'iron-fallou
 /** 洗車メニュー。ローテーションで「次回やること」を決める。定義は catalog.ts。 */
 export type MenuId = 'regular' | 'coating' | 'mineral'
 
-export type IntervalWeeks = 2 | 3
+export type IntervalWeeks = 2 | 3 | 4 | 6
 export type HorizonWeeks = 4 | 8 | 12
 
 /** 洗車計画の設定。 */
@@ -45,6 +45,14 @@ export interface RecordDraft {
   readonly menu?: MenuId
   /** 洗車日（YYYY-MM-DD, ローカル日付）。未設定 = 今日 */
   readonly washedOn?: string
+  /** 見送った提案の id。記録するとドラフトごと空になり、見送りも失効する */
+  readonly dismissed?: readonly string[]
+}
+
+/** 記録時に未実施だった必須工程。 */
+export interface SkippedStep {
+  readonly name: string
+  readonly templateId?: string
 }
 
 /** 施工記録。工程名はスナップショットで保持し、プラン編集の影響を受けない。 */
@@ -60,6 +68,10 @@ export interface WashRecord {
   readonly conditions: readonly ConditionTag[]
   /** やったメニュー。未設定は不明（メニュー導入前の記録など）。 */
   readonly menu?: MenuId
+  /** 記録時点の予定メニュー（ローテーションの次）。未設定は不明。 */
+  readonly plannedMenu?: MenuId
+  /** 記録時に未チェックだった必須工程。未設定は不明。 */
+  readonly skipped?: readonly SkippedStep[]
 }
 
 export type IdGenerator = () => string

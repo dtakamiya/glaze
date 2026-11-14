@@ -191,11 +191,25 @@ export const MENUS: readonly MenuTemplate[] = [
   },
 ]
 
+/** 特別メニュー（通常洗車以外）の周期。 */
+export interface MenuCycle {
+  /** 最初の記録から、初めて予定に入るまでの日数 */
+  readonly firstDays: number
+  /** 最後に実施してから、次に予定に入るまでの日数 */
+  readonly everyDays: number
+}
+
 /**
- * ローテーション。洗車のたびに 1 つ進み、末尾の次は先頭に戻る。
- * 洗車間隔 2 週なら 8 週で一巡し、コーティング補充と水シミ除去が約 2 か月に 1 回ずつ入る。
+ * 特別メニューは「洗車の回数」ではなく「経過日数」で決める（頻繁に洗う人に増えすぎない・間が空く人に抜けない）。
+ * 約 2 か月に 1 回ずつ。最初はコーティング補充 → 水シミ・水アカ除去の順にずらして入れる。
  */
-export const ROTATION: readonly MenuId[] = ['regular', 'coating', 'regular', 'mineral']
+export const MENU_CYCLES: Readonly<Record<Exclude<MenuId, 'regular'>, MenuCycle>> = {
+  coating: { firstDays: 28, everyDays: 56 },
+  mineral: { firstDays: 42, everyDays: 56 },
+}
+
+/** 周期が重なったときの優先順（水シミは放置すると落ちにくくなるため先）。 */
+export const MENU_PRIORITY: readonly Exclude<MenuId, 'regular'>[] = ['mineral', 'coating']
 
 export const MENU_IDS = MENUS.map((menu) => menu.id) as [MenuId, ...MenuId[]]
 

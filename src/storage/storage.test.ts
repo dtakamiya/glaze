@@ -217,6 +217,31 @@ describe('settings and draft storage', () => {
     expect(loadHistory()[0].menu).toBe('coating')
   })
 
+  test('round-trips the planned menu, skipped steps and dismissed suggestions', () => {
+    const skipped = [{ name: 'すすぎ', templateId: 'rinse-tap' }, { name: '自作' }]
+    saveHistory([record({ plannedMenu: 'coating', skipped })])
+    saveDraft({ ...EMPTY_DRAFT, dismissed: ['menu:mineral:tags'] })
+
+    expect(loadHistory()[0]).toMatchObject({ plannedMenu: 'coating', skipped })
+    expect(loadDraft().dismissed).toEqual(['menu:mineral:tags'])
+  })
+
+  test('still loads records saved before planned menu and skipped steps existed', () => {
+    const { plannedMenu, skipped, ...legacy } = record()
+    void plannedMenu
+    void skipped
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([legacy]))
+
+    expect(loadHistory()).toEqual([legacy])
+  })
+
+  test('rejects a skipped step with an empty name', () => {
+    silenceWarn()
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([record({ skipped: [{ name: '' }] })]))
+
+    expect(loadHistory()).toEqual([])
+  })
+
   test('discards an unknown menu id', () => {
     silenceWarn()
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...EMPTY_DRAFT, menu: 'unknown' }))

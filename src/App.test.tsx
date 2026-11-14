@@ -275,7 +275,7 @@ describe('記録の完了表示', () => {
 
     await user.click(screen.getByRole('button', { name: '施工を記録' }))
 
-    expect(screen.getByText(/記録しました。次回は .+ のコーティング補充です。/)).toBeInTheDocument()
+    expect(screen.getByText(/記録しました。次回は .+ の通常洗車です。/)).toBeInTheDocument()
     expect(window.scrollTo).toHaveBeenCalled()
   })
 
@@ -337,13 +337,16 @@ describe('メニュー別の工程', () => {
     expect(screen.queryByRole('checkbox', { name: '水シミ・水アカ除去' })).not.toBeInTheDocument()
   })
 
-  test('記録すると次回メニューの工程に切り替わりチェックは外れる', async () => {
+  test('記録するとメニュー専用の工程は次回の予定に合わせて入れ替わり、チェックは外れる', async () => {
     const { user } = setup()
+    await user.selectOptions(screen.getByRole('combobox', { name: '今回のメニュー' }), 'mineral')
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('checkbox', { name: '水シミ・水アカ除去' }))
 
     await user.click(screen.getByRole('button', { name: '施工を記録' }))
 
-    expect(screen.getByRole('checkbox', { name: 'コーティング補充' })).not.toBeChecked()
+    // 次回の予定は通常洗車（特別メニューは日数が空くまで入らない）
+    expect(screen.queryByRole('checkbox', { name: '水シミ・水アカ除去' })).not.toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: WHEELS })).not.toBeChecked()
   })
 
@@ -356,6 +359,128 @@ describe('メニュー別の工程', () => {
 
     await user.click(screen.getByRole('tab', { name: '施工履歴' }))
     expect(within(screen.getByRole('article')).getAllByText('水シミ・水アカ除去')).toHaveLength(2)
+  })
+})
+
+describe('実績にもとづく次回提案', () => {
+  const openSchedule = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('tab', { name: '計画' }))
+
+  /** 水シミを記録した直後の状態を作る（通常洗車 → 次回予定はコーティング補充） */
+  const recordWithWaterSpot = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '水シミ' }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+  }
+
+  test('水シミを記録すると、計画タブに理由つきの提案が出る', async () => {
+    const { user } = setup()
+    await recordWithWaterSpot(user)
+
+    await openSchedule(user)
+
+    const suggestions = screen.getByRole('region', { name: '前回の記録からの提案' })
+    expect(within(suggestions).getByText('前回、水シミを記録したため')).toBeInTheDocument()
+    expect(within(suggestions).getByRole('button', { name: '採用する' })).toBeInTheDocument()
+  })
+
+  test('採用すると先頭の予定と記録フォームのメニューが変わり、専用工程が出る', async () => {
+    const { user } = setup()
+    await recordWithWaterSpot(user)
+    await openSchedule(user)
+
+    await user.click(screen.getByRole('button', { name: '採用する' }))
+
+    expect(within(screen.getAllByRole('article')[0]).getByRole('heading', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '採用する' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: '洗車プラン' }))
+    expect(screen.getByRole('combobox', { name: '今回のメニュー' })).toHaveValue('mineral')
+    expect(screen.getByRole('checkbox', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
+  })
+
+  test('採用後は「予定どおりに戻す」で元のメニューに戻せる', async () => {
+    const { user } = setup()
+    await recordWithWaterSpot(user)
+    await openSchedule(user)
+    await user.click(screen.getByRole('button', { name: '採用する' }))
+
+    await user.click(screen.getByRole('button', { name: '予定どおりに戻す' }))
+
+    expect(within(screen.getAllByRole('article')[0]).getByRole('heading', { name: '通常洗車' })).toBeInTheDocument()
+  })
+
+  test('見送ると提案が消え、再起動しても出ない', async () => {
+    const { user, unmount } = setup()
+    await recordWithWaterSpot(user)
+    await openSchedule(user)
+
+    await user.click(screen.getByRole('button', { name: '見送る' }))
+    expect(screen.queryByText('前回、水シミを記録したため')).not.toBeInTheDocument()
+    unmount()
+
+    const { user: user2 } = setup()
+    await openSchedule(user2)
+    expect(screen.queryByText('前回、水シミを記録したため')).not.toBeInTheDocument()
+  })
+
+  test('鳥フンと未実施の必須工程は、情報のみの注意として出る', async () => {
+    const { user } = setup()
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+    await user.click(screen.getByRole('button', { name: '鳥フン' }))
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+
+    await openSchedule(user)
+
+    expect(screen.getByText(/前回、鳥フンを記録しました。次回は「虫・鳥フン処理」を忘れずに/)).toBeInTheDocument()
+    expect(screen.getByText(/前回未実施: .*シャンプー洗車/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '採用する' })).not.toBeInTheDocument()
+  })
+
+  test('履歴に予定との差（予定メニューと未実施の工程）が出る', async () => {
+    const { user } = setup()
+    await user.selectOptions(screen.getByRole('combobox', { name: '今回のメニュー' }), 'mineral')
+    await user.click(screen.getByRole('checkbox', { name: WHEELS }))
+
+    await user.click(screen.getByRole('button', { name: '施工を記録' }))
+
+    await user.click(screen.getByRole('tab', { name: '施工履歴' }))
+    const record = screen.getByRole('article')
+    expect(within(record).getByText('予定: 通常洗車 → 実施: 水シミ・水アカ除去')).toBeInTheDocument()
+    expect(within(record).getByText(/未実施: .*予洗い（砂を流す）/)).toBeInTheDocument()
+  })
+
+  test('履歴が無いうちは提案が出ない', async () => {
+    const { user } = setup()
+
+    await openSchedule(user)
+
+    expect(screen.queryByRole('region', { name: '前回の記録からの提案' })).not.toBeInTheDocument()
+  })
+})
+
+describe('過去日で記録するときの予定メニュー', () => {
+  test('洗車日を過去にすると、その日の予定メニューに合わせて専用工程と選択が変わる', () => {
+    const daysAgo = (n: number) => {
+      const d = new Date()
+      d.setDate(d.getDate() - n)
+      return d
+    }
+    const value = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    localStorage.setItem(
+      'glaze:v2:history',
+      JSON.stringify([
+        { id: 'r', washedAt: daysAgo(45).toISOString(), steps: [], note: '', waterType: null, chemicals: '', conditions: [], menu: 'regular' },
+      ]),
+    )
+    setup()
+    // 最初の記録から 45 日 → 今日の予定は水シミ・水アカ除去（周期が重なると水シミ除去が先）
+    expect(screen.getByRole('combobox', { name: '今回のメニュー' })).toHaveValue('mineral')
+    expect(screen.getByRole('checkbox', { name: '水シミ・水アカ除去' })).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('洗車日'), { target: { value: value(daysAgo(44)) } })
+
+    // その日は最初の記録から 1 日後 → 通常洗車
+    expect(screen.getByRole('combobox', { name: '今回のメニュー' })).toHaveValue('regular')
+    expect(screen.queryByRole('checkbox', { name: '水シミ・水アカ除去' })).not.toBeInTheDocument()
   })
 })
 
@@ -384,18 +509,22 @@ describe('洗車計画タブ', () => {
     expect(items).toHaveLength(5)
     expect(within(items[0]).getByText('次回')).toBeInTheDocument()
     expect(within(items[0]).getByRole('heading', { name: '通常洗車' })).toBeInTheDocument()
-    expect(within(items[1]).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
+    // 特別メニューは洗車の回数ではなく日数で入る（最初の記録から 4 週 → コーティング補充）
+    expect(within(items[1]).getByRole('heading', { name: '通常洗車' })).toBeInTheDocument()
+    expect(within(items[2]).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
   })
 
-  test('記録すると次回メニューがローテーションの次に進む', async () => {
+  test('記録すると次回は 2 週間後の通常洗車で、その次の回にコーティング補充が入る', async () => {
     const { user } = setup()
     await user.click(screen.getByRole('checkbox', { name: WHEELS }))
     await user.click(screen.getByRole('button', { name: '施工を記録' }))
 
     await openSchedule(user)
 
-    const [next] = screen.getAllByRole('article')
-    expect(within(next).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
+    const [next, second] = screen.getAllByRole('article')
+    expect(within(next).getByRole('heading', { name: '通常洗車' })).toBeInTheDocument()
+    // 最初の記録（今日）から 4 週後がコーティング補充
+    expect(within(second).getByRole('heading', { name: 'コーティング補充' })).toBeInTheDocument()
   })
 
   test('記録フォームの既定は予定のメニューで、別のメニューを選ぶと履歴とローテーションに反映される', async () => {
@@ -539,8 +668,8 @@ describe('端末内保存', () => {
     const { user } = setup()
 
     const names = screen.getAllByRole('checkbox').map((c) => c.closest('label')?.textContent)
-    // 既存の並びは保ち、今回のメニュー（旧記録 1 件の次 = コーティング補充）の工程だけが加わる
-    expect(names.slice(1)).toEqual(['シャンプー洗車', '予洗い（高圧水で砂を落とす）', 'コーティング補充'])
+    // 既存の並びは保ち、今回のメニュー（最初の記録から日数がたっているため水シミ・水アカ除去）の工程だけが加わる
+    expect(names.slice(1)).toEqual(['シャンプー洗車', '予洗い（高圧水で砂を落とす）', '水シミ・水アカ除去'])
     expect(screen.getByRole('checkbox', { name: 'シャンプー洗車' })).toBeChecked()
     await user.click(screen.getByRole('tab', { name: '施工履歴' }))
     const record = screen.getByRole('article')

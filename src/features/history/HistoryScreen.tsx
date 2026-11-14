@@ -64,6 +64,14 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
                       </li>
                     ))}
                   </ul>
+                  {record.plannedMenu !== undefined && record.menu !== undefined && record.plannedMenu !== record.menu && (
+                    <p className="card__diff">
+                      予定: {menuName(record.plannedMenu)} → 実施: {menuName(record.menu)}
+                    </p>
+                  )}
+                  {record.skipped !== undefined && record.skipped.length > 0 && (
+                    <p className="card__diff">未実施: {record.skipped.map((step) => step.name).join('、')}</p>
+                  )}
                   {record.chemicals && <p className="card__note">使用: {record.chemicals}</p>}
                   {record.note && <p className="card__note">{record.note}</p>}
                 </article>

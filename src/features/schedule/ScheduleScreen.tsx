@@ -1,20 +1,37 @@
 import { findMenu } from '../../domain/catalog'
 import type { ScheduleItem } from '../../domain/schedule'
+import type { Suggestion } from '../../domain/suggestion'
 import { HORIZON_WEEKS_OPTIONS, INTERVAL_WEEKS_OPTIONS } from '../../domain/settings'
 import { formatMonthDay, toDateString } from '../../lib/format'
-import type { HorizonWeeks, IntervalWeeks, SchedulePrefs } from '../../domain/types'
+import { SuggestionList } from './SuggestionList'
+import type { HorizonWeeks, IntervalWeeks, MenuId, SchedulePrefs } from '../../domain/types'
 
 interface ScheduleScreenProps {
   items: readonly ScheduleItem[]
   prefs: SchedulePrefs
   onPrefsChange: (prefs: SchedulePrefs) => void
+  suggestions: readonly Suggestion[]
+  /** 先頭の予定を、ローテーションではなく選択したメニューに変えているか */
+  menuOverridden: boolean
+  onAdopt: (menu: MenuId) => void
+  onDismiss: (suggestionId: string) => void
+  onClearOverride: () => void
 }
 
 function pickOption<T extends number>(options: readonly T[], value: string, fallback: T): T {
   return options.find((option) => String(option) === value) ?? fallback
 }
 
-export function ScheduleScreen({ items, prefs, onPrefsChange }: ScheduleScreenProps) {
+export function ScheduleScreen({
+  items,
+  prefs,
+  onPrefsChange,
+  suggestions,
+  menuOverridden,
+  onAdopt,
+  onDismiss,
+  onClearOverride,
+}: ScheduleScreenProps) {
   return (
     <section className="screen" aria-labelledby="schedule-title">
       <h1 id="schedule-title">洗車計画</h1>
@@ -58,6 +75,8 @@ export function ScheduleScreen({ items, prefs, onPrefsChange }: ScheduleScreenPr
         </label>
       </div>
 
+      <SuggestionList suggestions={suggestions} onAdopt={onAdopt} onDismiss={onDismiss} />
+
       <ol className="schedule">
         {items.map((item, index) => {
           const menu = findMenu(item.menu)
@@ -71,13 +90,18 @@ export function ScheduleScreen({ items, prefs, onPrefsChange }: ScheduleScreenPr
                 {item.overdueDays > 0 && <p className="schedule__overdue">予定日を {item.overdueDays} 日過ぎています</p>}
                 <h2 className="schedule__menu">{menu?.name ?? item.menu}</h2>
                 {menu && <p className="schedule__summary">{menu.summary}</p>}
+                {index === 0 && menuOverridden && (
+                  <button type="button" className="button button--ghost schedule__reset" onClick={onClearOverride}>
+                    予定どおりに戻す
+                  </button>
+                )}
               </article>
             </li>
           )
         })}
       </ol>
       <p className="schedule__note">
-        洗車のたびに、メニューは「通常 → コーティング補充 → 通常 → 水シミ・水アカ除去」の順で進みます。記録するときに別のメニューへ変えることもできます。
+        コーティング補充と水シミ・水アカ除去は、最後にやってからの日数で約 2 か月ごとに入ります。洗う回数が多くても増えすぎません。記録するときに別のメニューへ変えることもできます。
       </p>
     </section>
   )

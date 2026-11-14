@@ -31,6 +31,10 @@ const recordSchema = z.object({
   chemicals: chemicalsSchema,
   conditions: conditionsSchema,
   menu: menuSchema,
+  plannedMenu: menuSchema,
+  skipped: z
+    .array(z.object({ name: z.string().min(1).max(MAX_STEP_NAME_LENGTH), templateId: z.string().min(1).optional() }))
+    .optional(),
 })
 
 export const historySchema = z.array(recordSchema)
@@ -38,7 +42,7 @@ export const historySchema = z.array(recordSchema)
 export const settingsSchema = z.object({ hasPureWater: z.boolean() })
 
 export const schedulePrefsSchema = z.object({
-  intervalWeeks: z.union([z.literal(2), z.literal(3)]),
+  intervalWeeks: z.union([z.literal(2), z.literal(3), z.literal(4), z.literal(6)]),
   horizonWeeks: z.union([z.literal(4), z.literal(8), z.literal(12)]),
 })
 
@@ -49,6 +53,7 @@ export const draftSchema = z.object({
   conditions: conditionsSchema,
   menu: menuSchema,
   washedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dismissed: z.array(z.string().min(1)).optional(),
 })
 
 // ---- v1（移行元。凍結。変更しないこと）----

@@ -34,6 +34,7 @@ describe('createRecord', () => {
       DEFAULT_SETTINGS,
       now,
       () => 'r1',
+      'regular',
     )
 
     expect(result).toEqual({
@@ -44,6 +45,9 @@ describe('createRecord', () => {
       waterType: 'tap',
       chemicals: 'スリーク',
       conditions: ['bug'],
+      menu: undefined,
+      plannedMenu: 'regular',
+      skipped: [{ name: 'シャンプー' }],
     })
   })
 
@@ -54,6 +58,7 @@ describe('createRecord', () => {
       DEFAULT_SETTINGS,
       new Date(),
       () => 'r1',
+      'regular',
     )
 
     expect(result.note).toHaveLength(500)
@@ -61,13 +66,13 @@ describe('createRecord', () => {
   })
 
   test('follows the pure-water setting when the draft leaves water unset', () => {
-    const result = createRecord(plan, EMPTY_DRAFT, { hasPureWater: true }, new Date(), () => 'r1')
+    const result = createRecord(plan, EMPTY_DRAFT, { hasPureWater: true }, new Date(), () => 'r1', 'regular')
 
     expect(result.waterType).toBe('pure')
   })
 
   test('prefers the explicit water type in the draft over the setting', () => {
-    const result = createRecord(plan, draft({ waterType: 'tap' }), { hasPureWater: true }, new Date(), () => 'r1')
+    const result = createRecord(plan, draft({ waterType: 'tap' }), { hasPureWater: true }, new Date(), () => 'r1', 'regular')
 
     expect(result.waterType).toBe('tap')
   })
@@ -79,9 +84,33 @@ describe('createRecord', () => {
       DEFAULT_SETTINGS,
       new Date(),
       () => 'r1',
+      'regular',
     )
 
     expect(result.conditions).toEqual(['bug', 'tar'])
+  })
+})
+
+describe('createRecord: planned menu and skipped steps', () => {
+  const custom: WashPlan = {
+    steps: [
+      { id: 'a', name: 'シャンプー洗車', done: true, templateId: 'shampoo' },
+      { id: 'b', name: 'すすぎ', done: false, templateId: 'rinse-tap' },
+      { id: 'c', name: '虫・鳥フン処理', done: false, templateId: 'bug-bird' },
+      { id: 'd', name: '自作', done: false },
+    ],
+  }
+
+  test('keeps the planned menu next to the actual one', () => {
+    const result = createRecord(custom, draft({ menu: 'mineral' }), DEFAULT_SETTINGS, new Date(), () => 'r', 'coating')
+
+    expect([result.menu, result.plannedMenu]).toEqual(['mineral', 'coating'])
+  })
+
+  test('lists unchecked required steps only, not optional ones', () => {
+    const result = createRecord(custom, EMPTY_DRAFT, DEFAULT_SETTINGS, new Date(), () => 'r', 'regular')
+
+    expect(result.skipped).toEqual([{ name: 'すすぎ', templateId: 'rinse-tap' }, { name: '自作' }])
   })
 })
 

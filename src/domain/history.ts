@@ -1,8 +1,16 @@
+import { findTemplate } from './catalog'
 import { completedStepNames } from './plan'
-import type { IdGenerator, RecordDraft, WashPlan, WashRecord, WashSettings } from './types'
+import type { IdGenerator, MenuId, RecordDraft, SkippedStep, WashPlan, WashRecord, WashSettings } from './types'
 
 export const MAX_NOTE_LENGTH = 500
 export const MAX_CHEMICALS_LENGTH = 100
+
+/** 未チェックの必須工程（任意工程は含めない）。 */
+function skippedRequiredSteps(plan: WashPlan): SkippedStep[] {
+  return plan.steps
+    .filter((step) => !step.done && findTemplate(step.templateId)?.optional !== true)
+    .map((step) => (step.templateId === undefined ? { name: step.name } : { name: step.name, templateId: step.templateId }))
+}
 
 export function createRecord(
   plan: WashPlan,
@@ -10,6 +18,7 @@ export function createRecord(
   settings: WashSettings,
   now: Date,
   createId: IdGenerator,
+  plannedMenu: MenuId,
 ): WashRecord {
   return {
     id: createId(),
@@ -20,6 +29,8 @@ export function createRecord(
     chemicals: draft.chemicals.trim().slice(0, MAX_CHEMICALS_LENGTH),
     conditions: [...new Set(draft.conditions)],
     menu: draft.menu,
+    plannedMenu,
+    skipped: skippedRequiredSteps(plan),
   }
 }
 

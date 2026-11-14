@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { TabBar, type TabId } from './components/TabBar'
-import { EMPTY_DRAFT } from './domain/draft'
+import { EMPTY_DRAFT, dismissSuggestion } from './domain/draft'
 import { menuName } from './domain/catalog'
 import { addRecord, createRecord, removeRecord, resolveWashedAt } from './domain/history'
 import {
@@ -15,7 +15,8 @@ import {
 import { daysSinceLastWash } from './domain/reminder'
 import { buildSchedule, currentMenu, nextMenu } from './domain/schedule'
 import { setPureWater } from './domain/settings'
-import type { RecordDraft } from './domain/types'
+import { suggestNext, visibleSuggestions } from './domain/suggestion'
+import type { MenuId, RecordDraft } from './domain/types'
 import { HistoryScreen } from './features/history/HistoryScreen'
 import { PlanScreen } from './features/plan/PlanScreen'
 import { ScheduleScreen } from './features/schedule/ScheduleScreen'
@@ -37,7 +38,9 @@ import {
 
 /** 保存済みの plan に、今回のメニュー専用の工程を反映して読み込む。 */
 function loadInitialPlan() {
-  const menu = currentMenu(loadDraft().menu, loadHistory())
+  const draft = loadDraft()
+  const now = new Date()
+  const menu = currentMenu(draft.menu, loadHistory(), resolveWashedAt(draft.washedOn, now))
   const plan = loadPlan(() => createDefaultPlan(loadSettings(), createId, menu))
   return applyMenu(plan, menu, createId)
 }
@@ -65,7 +68,11 @@ function App() {
 
   const saveFailed =
     settingsSaveFailed || planSaveFailed || historySaveFailed || draftSaveFailed || prefsSaveFailed
-  const plannedMenu = nextMenu(history)
+  // 洗車日を過去にしたときは、その日時点の予定メニューで考える
+  const washDate = (d: RecordDraft) => resolveWashedAt(d.washedOn, now)
+  const plannedMenu = nextMenu(history, washDate(draft))
+  const chosenMenu = currentMenu(draft.menu, history, washDate(draft))
+  const suggestions = visibleSuggestions(suggestNext(history, now), draft.dismissed ?? [], chosenMenu)
 
   const handleTabChange = (next: TabId) => {
     setNotice(null)
@@ -75,19 +82,28 @@ function App() {
   // メニューが変わったら、そのメニュー専用の工程を plan に反映する
   const handleDraftChange = (next: RecordDraft) => {
     setDraft(next)
-    const menu = currentMenu(next.menu, history)
+    const menu = currentMenu(next.menu, history, washDate(next))
     // メニューが変わったときだけ反映する（ユーザーが消した専用工程を、メモ入力などで復活させない）
-    if (menu !== currentMenu(draft.menu, history)) setPlan((p) => applyMenu(p, menu, createId))
+    if (menu !== chosenMenu) setPlan((p) => applyMenu(p, menu, createId))
   }
 
   const handleRecord = () => {
     const now = new Date()
     const recordedAt = resolveWashedAt(draft.washedOn, now)
-    const record = createRecord(plan, { ...draft, menu: draft.menu ?? plannedMenu }, settings, recordedAt, createId)
+    // 予定メニューは洗車した日の周期で決める（過去日で記録する場合も）
+    const plannedAtWash = nextMenu(history, recordedAt)
+    const record = createRecord(
+      plan,
+      { ...draft, menu: draft.menu ?? plannedAtWash },
+      settings,
+      recordedAt,
+      createId,
+      plannedAtWash,
+    )
     const nextHistory = addRecord(history, record)
     setNow(now)
     setHistory(nextHistory)
-    setPlan((p) => applyMenu(resetPlan(p), nextMenu(nextHistory), createId))
+    setPlan((p) => applyMenu(resetPlan(p), nextMenu(nextHistory, now), createId))
     setDraft(EMPTY_DRAFT)
 
     const [next] = buildSchedule(nextHistory, prefs, now)
@@ -95,11 +111,17 @@ function App() {
     window.scrollTo({ top: 0 })
   }
 
+  const handleAdoptMenu = (menu: MenuId) => handleDraftChange({ ...draft, menu })
+  const handleDismissSuggestion = (id: string) => setDraft(dismissSuggestion(draft, id))
+  const handleClearMenuOverride = () => handleDraftChange({ ...draft, menu: undefined })
+
   const handleRemoveRecord = (id: string) => {
     const nextHistory = removeRecord(history, id)
     setHistory(nextHistory)
-    const menu = currentMenu(draft.menu, nextHistory)
-    if (menu !== currentMenu(draft.menu, history)) setPlan((p) => applyMenu(p, menu, createId))
+    // 最新の記録が変わると同じ提案 ID が別の記録由来になりうるため、見送りは解除する
+    setDraft((d) => (d.dismissed === undefined ? d : { ...d, dismissed: undefined }))
+    const menu = currentMenu(draft.menu, nextHistory, washDate(draft))
+    if (menu !== chosenMenu) setPlan((p) => applyMenu(p, menu, createId))
   }
 
   const handlePureWaterChange = (hasPureWater: boolean) => {
@@ -134,11 +156,20 @@ function App() {
             onAdd={(name) => setPlan((p) => addStep(p, name, createId))}
             onRemove={(id) => setPlan((p) => removeStep(p, id))}
             onReset={() => setPlan(resetPlan)}
-            onRestoreDefault={() => setPlan(createDefaultPlan(settings, createId, currentMenu(draft.menu, history)))}
+            onRestoreDefault={() => setPlan(createDefaultPlan(settings, createId, chosenMenu))}
             onRecord={handleRecord}
           />
         ) : tab === 'schedule' ? (
-          <ScheduleScreen items={buildSchedule(history, prefs, now)} prefs={prefs} onPrefsChange={setPrefs} />
+          <ScheduleScreen
+            items={buildSchedule(history, prefs, now, draft.menu)}
+            prefs={prefs}
+            onPrefsChange={setPrefs}
+            suggestions={suggestions}
+            menuOverridden={draft.menu !== undefined && draft.menu !== plannedMenu}
+            onAdopt={handleAdoptMenu}
+            onDismiss={handleDismissSuggestion}
+            onClearOverride={handleClearMenuOverride}
+          />
         ) : (
           <HistoryScreen history={history} onRemove={handleRemoveRecord} />
         )}

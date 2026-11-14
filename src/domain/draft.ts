@@ -13,3 +13,8 @@ export function toggleCondition(draft: RecordDraft, tag: ConditionTag): RecordDr
     : [...draft.conditions, tag]
   return { ...draft, conditions }
 }
+
+export function dismissSuggestion(draft: RecordDraft, suggestionId: string): RecordDraft {
+  const dismissed = draft.dismissed ?? []
+  return dismissed.includes(suggestionId) ? draft : { ...draft, dismissed: [...dismissed, suggestionId] }
+}

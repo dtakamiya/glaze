@@ -530,3 +530,54 @@ fieldset.field legend {
   background: var(--color-surface);
   font-size: 1rem;
 }
+
+/* suggestions */
+.suggestions {
+  margin-bottom: 16px;
+}
+.suggestions__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.suggestions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.suggestion {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.suggestion--menu {
+  border-color: var(--color-primary);
+}
+.suggestion__text {
+  margin: 0;
+}
+.suggestion__reason {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.suggestion__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.suggestion__actions .button {
+  flex: 1;
+  white-space: nowrap;
+}
+.schedule__reset {
+  margin-top: 8px;
+  width: calc(100% - 12px);
+}
+.card__diff {
+  margin: 6px 12px 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
