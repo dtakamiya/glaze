@@ -1,6 +1,6 @@
 # Glaze — 洗車プランナー
 
-スマホ向け PWA。洗車の工程チェックリストと施工履歴を**端末内（localStorage）**に保存する。サーバー・ログイン・外部通信なし。
+スマホ向け PWA。洗車の工程チェックリストと施工履歴を**端末内（localStorage）**に保存する。サーバー・ログインなし。外部通信は計画タブの OFUSE ウィジェット（`components/OfuseButton.tsx`、`https://ofuse.me/assets/platform/widget.js`）だけで、アプリのデータは送らない。
 
 > ディレクトリ名は `graze` だがアプリ名は **Glaze**（package name も `glaze`）。
 
