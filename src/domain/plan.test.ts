@@ -2,9 +2,11 @@ import { describe, expect, test } from 'vitest'
 import { DEFAULT_SETTINGS } from './settings'
 import {
   addStep,
+  applyMenu,
   applyPureWater,
   completedStepNames,
   createDefaultPlan,
+  planProgress,
   removeStep,
   resetPlan,
   toggleStep,
@@ -135,5 +137,94 @@ describe('resetPlan / completedStepNames', () => {
 
     expect(completedStepNames(checked)).toEqual([plan.steps[0].name, plan.steps[2].name])
     expect(resetPlan(checked).steps.every((s) => !s.done)).toBe(true)
+  })
+})
+
+describe('createDefaultPlan with a menu', () => {
+  test('places the mineral step before the coating wipe and the coating step after it', () => {
+    const mineral = createDefaultPlan(DEFAULT_SETTINGS, fixedId, 'mineral').steps.map((s) => s.templateId)
+    const coating = createDefaultPlan(DEFAULT_SETTINGS, fixedId, 'coating').steps.map((s) => s.templateId)
+
+    expect(mineral.indexOf('menu-mineral')).toBe(mineral.indexOf('wipe-coat') - 1)
+    expect(coating.indexOf('menu-coating')).toBe(coating.indexOf('wipe-coat') + 1)
+    expect(createDefaultPlan(DEFAULT_SETTINGS, fixedId, 'regular').steps.some((s) => s.templateId?.startsWith('menu-'))).toBe(
+      false,
+    )
+  })
+})
+
+describe('applyMenu', () => {
+  test('adds the menu step in catalog order without touching other steps', () => {
+    const plan = tapPlan()
+
+    const next = applyMenu(plan, 'mineral', () => 'm1')
+
+    expect(next.steps.map((s) => s.templateId)).toEqual([
+      'tire-wheel',
+      'pre-rinse',
+      'shampoo',
+      'rinse-tap',
+      'bug-bird',
+      'menu-mineral',
+      'wipe-coat',
+      'window',
+      'interior',
+    ])
+    expect(next.steps.find((s) => s.templateId === 'menu-mineral')?.id).toBe('m1')
+    expect(plan.steps).toHaveLength(8)
+  })
+
+  test('replaces the previous menu step when the menu changes', () => {
+    const withMineral = applyMenu(tapPlan(), 'mineral', () => 'm1')
+
+    const next = applyMenu(withMineral, 'coating', () => 'c1')
+
+    const ids = next.steps.map((s) => s.templateId)
+    expect(ids).not.toContain('menu-mineral')
+    expect(ids.indexOf('menu-coating')).toBe(ids.indexOf('wipe-coat') + 1)
+  })
+
+  test('removes the menu step for a regular wash', () => {
+    const withMineral = applyMenu(tapPlan(), 'mineral', () => 'm1')
+
+    expect(applyMenu(withMineral, 'regular', fixedId).steps.map((s) => s.templateId)).not.toContain('menu-mineral')
+  })
+
+  test('is idempotent and keeps the done state of an existing menu step', () => {
+    const withMineral = applyMenu(tapPlan(), 'mineral', () => 'm1')
+    const checked = toggleStep(withMineral, 'm1')
+
+    expect(applyMenu(checked, 'mineral', fixedId)).toBe(checked)
+    expect(applyMenu(tapPlan(), 'regular', fixedId).steps).toHaveLength(8)
+  })
+
+  test('puts the step after the last known step in a customized plan', () => {
+    const custom: WashPlan = {
+      steps: [
+        { id: 'a', name: 'シャンプー洗車', done: false, templateId: 'shampoo' },
+        { id: 'b', name: '自作', done: false },
+      ],
+    }
+
+    expect(applyMenu(custom, 'mineral', () => 'm').steps.map((s) => s.id)).toEqual(['a', 'm', 'b'])
+  })
+})
+
+describe('planProgress', () => {
+  test('excludes unchecked optional steps from the total', () => {
+    const plan = tapPlan()
+
+    expect(planProgress(plan)).toEqual({ done: 0, total: 5 })
+  })
+
+  test('counts a checked optional step on both sides', () => {
+    const plan = tapPlan()
+    const optional = plan.steps.find((s) => s.templateId === 'bug-bird')!
+
+    expect(planProgress(toggleStep(plan, optional.id))).toEqual({ done: 1, total: 6 })
+  })
+
+  test('treats custom steps as required', () => {
+    expect(planProgress(addStep(tapPlan(), '自作', () => 'x')).total).toBe(6)
   })
 })

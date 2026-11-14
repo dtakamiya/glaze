@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_DRAFT } from './draft'
-import { addRecord, createRecord, removeRecord } from './history'
+import { addRecord, createRecord, removeRecord, resolveWashedAt } from './history'
 import { DEFAULT_SETTINGS } from './settings'
 import type { RecordDraft, WashPlan, WashRecord } from './types'
 
@@ -101,5 +101,25 @@ describe('removeRecord', () => {
     const history = [record('a', '2026-01-01T00:00:00.000Z'), record('b', '2026-01-02T00:00:00.000Z')]
 
     expect(removeRecord(history, 'a').map((r) => r.id)).toEqual(['b'])
+  })
+})
+
+describe('resolveWashedAt', () => {
+  const now = new Date(2026, 10, 14, 16, 30)
+
+  test('uses now when no date is chosen', () => {
+    expect(resolveWashedAt(undefined, now)).toBe(now)
+  })
+
+  test('uses local noon of a past date', () => {
+    const result = resolveWashedAt('2026-11-10', now)
+
+    expect([result.getFullYear(), result.getMonth(), result.getDate(), result.getHours()]).toEqual([2026, 10, 10, 12])
+  })
+
+  test('falls back to now for today, future, malformed and impossible dates', () => {
+    for (const value of ['2026-11-14', '2026-11-20', 'yesterday', '2026-02-31', '2026-13-01']) {
+      expect(resolveWashedAt(value, now)).toBe(now)
+    }
   })
 })

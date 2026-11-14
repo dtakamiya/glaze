@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CONDITION_VALUES } from '../domain/catalog'
+import { CONDITION_VALUES, MENU_IDS } from '../domain/catalog'
 import { MAX_CHEMICALS_LENGTH, MAX_NOTE_LENGTH } from '../domain/history'
 import { MAX_STEP_NAME_LENGTH } from '../domain/plan'
 
@@ -19,6 +19,8 @@ const waterTypeSchema = z.enum(['pure', 'tap']).nullable()
 const noteSchema = z.string().max(MAX_NOTE_LENGTH)
 const chemicalsSchema = z.string().max(MAX_CHEMICALS_LENGTH)
 const conditionsSchema = z.array(z.enum(CONDITION_VALUES))
+// 任意。未設定は「不明（記録）」「予定に従う（下書き）」。
+const menuSchema = z.enum(MENU_IDS).optional()
 
 const recordSchema = z.object({
   id: z.string().min(1),
@@ -28,17 +30,25 @@ const recordSchema = z.object({
   waterType: waterTypeSchema,
   chemicals: chemicalsSchema,
   conditions: conditionsSchema,
+  menu: menuSchema,
 })
 
 export const historySchema = z.array(recordSchema)
 
 export const settingsSchema = z.object({ hasPureWater: z.boolean() })
 
+export const schedulePrefsSchema = z.object({
+  intervalWeeks: z.union([z.literal(2), z.literal(3)]),
+  horizonWeeks: z.union([z.literal(4), z.literal(8), z.literal(12)]),
+})
+
 export const draftSchema = z.object({
   note: noteSchema,
   waterType: waterTypeSchema,
   chemicals: chemicalsSchema,
   conditions: conditionsSchema,
+  menu: menuSchema,
+  washedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 // ---- v1（移行元。凍結。変更しないこと）----

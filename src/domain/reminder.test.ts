@@ -42,14 +42,17 @@ describe('daysSinceLastWash', () => {
 
 describe('reminderStatus', () => {
   test.each([
-    [null, 'none'],
-    [0, 'ok'],
-    [13, 'ok'],
-    [14, 'due'],
-    [21, 'due'],
-    [22, 'overdue'],
-    [100, 'overdue'],
-  ])('days=%s -> %s', (days, expected) => {
-    expect(reminderStatus(days)).toBe(expected)
+    [null, 2, 'none'],
+    [0, 2, 'ok'],
+    [13, 2, 'ok'],
+    [14, 2, 'due'],
+    [21, 2, 'due'],
+    [22, 2, 'overdue'],
+    [20, 3, 'ok'],
+    [21, 3, 'due'],
+    [28, 3, 'due'],
+    [29, 3, 'overdue'],
+  ])('days=%s interval=%sw -> %s', (days, weeks, expected) => {
+    expect(reminderStatus(days, weeks)).toBe(expected)
   })
 })

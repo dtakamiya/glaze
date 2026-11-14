@@ -35,13 +35,14 @@ src/
     history.ts   施工記録の作成・追加・削除
     draft.ts     入力中の記録（メモ・水・ケミカル・状態タグ）
     settings.ts  設定（純水器の有無）
-    reminder.ts  前回洗車からの日数と通知レベル（保存せず履歴から算出）
+    reminder.ts  前回洗車からの日数と通知レベル、日付ヘルパー（保存せず履歴から算出）
+    schedule.ts  洗車計画（ローテーションの次回メニューと、先の予定日の算出。保存せず履歴から算出）
   storage/     localStorage アダプタ（zod で検証）
     schemas.ts     v2 スキーマと凍結済み v1 スキーマ
     migrations.ts  v1 → v2 の純関数
     storage.ts     load/save（v2 → v1 移行 → 初期値の順に読む）
   hooks/       usePersistentState（読み込み + 変更時保存）
-  features/    画面単位（plan/, history/）
+  features/    画面単位（plan/, schedule/, history/）
   components/  共通 UI（TabBar）
   lib/         汎用ユーティリティ（id 生成）
   App.tsx      状態の保持と画面の結線
@@ -55,6 +56,12 @@ src/
 - **スキーマ変更時はキーのバージョンを上げる**（`glaze:v2:*` → `glaze:v3:*`）と同時に移行処理を追加する。現行は v2（plan / history / settings / draft）。v1 キーは移行元として読むだけで削除しない。v2 が不正でも v1 には戻らない。
 - **標準工程は `templateId` だけを保存**し、名前以外（コツ・任意・純水対応）はコード（`catalog.ts`）に持つ。テンプレート ID は公開後に変更・再利用しない。工程名は 40 文字以内（超えると保存データ全体が不正扱いになる）。
 - **状態タグ（`CONDITION_TAGS`）は追加のみ**。削除・改名すると保存済み履歴が検証に落ちる。
+- **洗車計画はローテーション方式**。`catalog.ts` の `ROTATION`（通常→コーティング補充→通常→水シミ・水アカ除去）を、記録のたびに 1 つ進める。実施メニューは記録の `menu`（任意・未設定は不明）。予定と違うメニューを実施したら、そのメニューの次へ進む（`rotationCursor`）。間隔（2/3 週）と表示期間（4/8/12 週）は `glaze:v2:schedule`。
+- **メニュー専用の工程**（`catalog.ts` の `menu` 付きテンプレート）は、今回のメニュー（下書きの選択、無ければ予定）に応じて `applyMenu` が plan に出し入れする。メニューが変わる操作（選択変更・記録・履歴削除）の各ハンドラで反映する。
+- **洗車日**は下書きの `washedOn`（YYYY-MM-DD、未設定 = 今日）。過去日はローカル正午の日時で記録し、未来日は受け付けない（`resolveWashedAt`）。
+- **進捗**は未チェックの任意工程を分母に入れない（`planProgress`）。
+- 記録直後は完了メッセージ（次回の予定入り）を表示し、画面を先頭へ戻す。
+- `menu` は v2 に任意項目として追加した（v2 公開前のため v3 へ上げていない）。公開後の項目追加は版を上げる。
 - 履歴の `waterType` が null は「不明」（v1 由来）。推測で埋めない。
 - 入力長の上限はドメイン定数（`MAX_STEP_NAME_LENGTH`, `MAX_NOTE_LENGTH`, `MAX_CHEMICALS_LENGTH`）を UI・スキーマで共有する。
 - 画面遷移はタブ state のみ（ルーター不要）。必要になるまで追加しない。

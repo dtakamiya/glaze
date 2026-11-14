@@ -1,33 +1,41 @@
 import type { WashRecord } from './types'
 
-/** 推奨は 2〜3 週間に 1 回。 */
-export const REMINDER_DUE_DAYS = 14
-export const REMINDER_OVERDUE_DAYS = 22
+const DAYS_PER_WEEK = 7
+/** 洗車間隔を過ぎてから「目安超過」とみなすまでの猶予日数。 */
+export const OVERDUE_GRACE_DAYS = 8
 
 export type ReminderStatus = 'none' | 'ok' | 'due' | 'overdue'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-function startOfLocalDay(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+export function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-/**
- * 最後の洗車からの経過日数（ローカル暦日の差）。履歴が無い・日付が不正なら null。
- * 履歴の並び順には依存せず、最新の washedAt を使う。
- */
-export function daysSinceLastWash(history: readonly WashRecord[], now: Date): number | null {
+/** ローカル暦日の差（a - b）。DST で 23/25 時間の日があっても整数になる。 */
+export function calendarDaysBetween(a: Date, b: Date): number {
+  return Math.round((startOfLocalDay(a).getTime() - startOfLocalDay(b).getTime()) / MS_PER_DAY)
+}
+
+/** 履歴の中で最新の洗車日時。履歴が無い・日付が不正なら null。並び順には依存しない。 */
+export function latestWashDate(history: readonly WashRecord[]): Date | null {
   const times = history.map((record) => new Date(record.washedAt)).filter((date) => !Number.isNaN(date.getTime()))
   if (times.length === 0) return null
-
-  const latest = new Date(Math.max(...times.map((date) => date.getTime())))
-  const days = Math.round((startOfLocalDay(now) - startOfLocalDay(latest)) / MS_PER_DAY)
-  return Math.max(0, days)
+  return new Date(Math.max(...times.map((date) => date.getTime())))
 }
 
-export function reminderStatus(days: number | null): ReminderStatus {
+/** 最後の洗車からの経過日数（ローカル暦日の差）。履歴が無い・日付が不正なら null。 */
+export function daysSinceLastWash(history: readonly WashRecord[], now: Date): number | null {
+  const latest = latestWashDate(history)
+  if (latest === null) return null
+  return Math.max(0, calendarDaysBetween(now, latest))
+}
+
+/** 洗車間隔（週）に応じた通知レベル。間隔に達したら due、さらに猶予を過ぎたら overdue。 */
+export function reminderStatus(days: number | null, intervalWeeks: number): ReminderStatus {
   if (days === null) return 'none'
-  if (days >= REMINDER_OVERDUE_DAYS) return 'overdue'
-  if (days >= REMINDER_DUE_DAYS) return 'due'
+  const dueDays = intervalWeeks * DAYS_PER_WEEK
+  if (days >= dueDays + OVERDUE_GRACE_DAYS) return 'overdue'
+  if (days >= dueDays) return 'due'
   return 'ok'
 }

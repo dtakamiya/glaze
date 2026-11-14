@@ -1,4 +1,4 @@
-import type { ConditionTag } from './types'
+import type { ConditionTag, MenuId } from './types'
 
 /**
  * 標準工程のカタログ。コツ・任意フラグ・純水/水道水の対応はここ（コード）に持ち、
@@ -14,9 +14,12 @@ export interface StepTemplate {
   /** slot 内でどちらの変種か（true = 純水あり） */
   readonly pureWater?: boolean
   readonly optional: boolean
+  /** 設定すると、そのメニューの日だけ plan に入る工程（通常は未設定） */
+  readonly menu?: MenuId
   readonly tips: readonly string[]
 }
 
+/** 並び順がそのまま plan 上の工程順になる。 */
 export const STEP_TEMPLATES: readonly StepTemplate[] = [
   {
     id: 'tire-wheel',
@@ -80,6 +83,16 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     ],
   },
   {
+    id: 'menu-mineral',
+    name: '水シミ・水アカ除去',
+    optional: false,
+    menu: 'mineral',
+    tips: [
+      'すすいだ後に、ミネラルリムーバーなどの専用品を使う',
+      '切削仕上げのホイールなど、使えない場所があるので製品の説明で確認する',
+    ],
+  },
+  {
     id: 'wipe-coat',
     name: '拭き上げ＋コーティング',
     optional: false,
@@ -88,6 +101,16 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
       '乾拭きはしない',
       '油分入りのワックスや厚いコーティングは汚れを取り込むため非推奨',
       '撥水の強さと車の綺麗さは関係ない',
+    ],
+  },
+  {
+    id: 'menu-coating',
+    name: 'コーティング補充',
+    optional: false,
+    menu: 'coating',
+    tips: [
+      '拭き上げの後に、油分なしのスプレーコーティング剤（シーラント）を丁寧に塗り直す',
+      '油分入りのワックスや厚いコーティングは汚れを取り込むため使わない',
     ],
   },
   {
@@ -103,6 +126,10 @@ export const STEP_TEMPLATES: readonly StepTemplate[] = [
     tips: [],
   },
 ]
+
+export function templateIndex(templateId: string | undefined): number {
+  return STEP_TEMPLATES.findIndex((template) => template.id === templateId)
+}
 
 export function findTemplate(templateId: string | undefined): StepTemplate | undefined {
   if (templateId === undefined) return undefined
@@ -134,4 +161,48 @@ export const CONDITION_VALUES = CONDITION_TAGS.map((tag) => tag.value) as [Condi
 
 export function conditionLabel(value: ConditionTag): string {
   return CONDITION_TAGS.find((tag) => tag.value === value)?.label ?? value
+}
+
+export interface MenuTemplate {
+  readonly id: MenuId
+  readonly name: string
+  readonly summary: string
+}
+
+/**
+ * 洗車メニューの定義。保存済みの記録が id を参照するため、追加のみ可（削除・改名は履歴が不正扱いになる）。
+ */
+export const MENUS: readonly MenuTemplate[] = [
+  {
+    id: 'regular',
+    name: '通常洗車',
+    summary: '基本の洗車。ホイール→予洗い→シャンプー→すすぎ→拭き上げまで。',
+  },
+  {
+    id: 'coating',
+    name: 'コーティング補充',
+    summary: '通常洗車に加えて、油分なしのスプレーコーティング剤を丁寧に塗り直す日。',
+  },
+  {
+    id: 'mineral',
+    name: '水シミ・水アカ除去',
+    summary:
+      '通常洗車で落ちない水シミ・水アカをミネラルリムーバー等で落とす日。切削仕上げのホイールなど、使えない場所は製品の説明で確認する。',
+  },
+]
+
+/**
+ * ローテーション。洗車のたびに 1 つ進み、末尾の次は先頭に戻る。
+ * 洗車間隔 2 週なら 8 週で一巡し、コーティング補充と水シミ除去が約 2 か月に 1 回ずつ入る。
+ */
+export const ROTATION: readonly MenuId[] = ['regular', 'coating', 'regular', 'mineral']
+
+export const MENU_IDS = MENUS.map((menu) => menu.id) as [MenuId, ...MenuId[]]
+
+export function menuName(id: MenuId): string {
+  return MENUS.find((menu) => menu.id === id)?.name ?? id
+}
+
+export function findMenu(id: MenuId): MenuTemplate | undefined {
+  return MENUS.find((menu) => menu.id === id)
 }

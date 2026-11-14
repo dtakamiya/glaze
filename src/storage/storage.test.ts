@@ -7,14 +7,17 @@ import {
   LEGACY_HISTORY_KEY,
   LEGACY_PLAN_KEY,
   PLAN_KEY,
+  SCHEDULE_KEY,
   SETTINGS_KEY,
   loadDraft,
   loadHistory,
   loadPlan,
+  loadSchedulePrefs,
   loadSettings,
   saveDraft,
   saveHistory,
   savePlan,
+  saveSchedulePrefs,
   saveSettings,
 } from './storage'
 
@@ -206,10 +209,43 @@ describe('settings and draft storage', () => {
     expect(localStorage.getItem(DRAFT_KEY)).not.toBeNull()
   })
 
+  test('keeps the planned menu in a draft and a record', () => {
+    saveDraft({ ...EMPTY_DRAFT, menu: 'mineral' })
+    saveHistory([record({ menu: 'coating' })])
+
+    expect(loadDraft().menu).toBe('mineral')
+    expect(loadHistory()[0].menu).toBe('coating')
+  })
+
+  test('discards an unknown menu id', () => {
+    silenceWarn()
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...EMPTY_DRAFT, menu: 'unknown' }))
+
+    expect(loadDraft()).toEqual(EMPTY_DRAFT)
+  })
+
   test('discards an invalid draft', () => {
     silenceWarn()
     localStorage.setItem(DRAFT_KEY, '{"note":1}')
 
     expect(loadDraft()).toEqual(EMPTY_DRAFT)
+  })
+})
+
+describe('schedule prefs storage', () => {
+  test('defaults to a 2-week interval and 8-week horizon and round-trips', () => {
+    expect(loadSchedulePrefs()).toEqual({ intervalWeeks: 2, horizonWeeks: 8 })
+
+    saveSchedulePrefs({ intervalWeeks: 3, horizonWeeks: 12 })
+
+    expect(loadSchedulePrefs()).toEqual({ intervalWeeks: 3, horizonWeeks: 12 })
+    expect(localStorage.getItem(SCHEDULE_KEY)).not.toBeNull()
+  })
+
+  test('falls back to defaults for values outside the allowed options', () => {
+    silenceWarn()
+    localStorage.setItem(SCHEDULE_KEY, JSON.stringify({ intervalWeeks: 5, horizonWeeks: 8 }))
+
+    expect(loadSchedulePrefs()).toEqual({ intervalWeeks: 2, horizonWeeks: 8 })
   })
 })

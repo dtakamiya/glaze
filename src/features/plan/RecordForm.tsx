@@ -1,11 +1,15 @@
-import { CONDITION_TAGS } from '../../domain/catalog'
+import { CONDITION_TAGS, MENUS } from '../../domain/catalog'
 import { toggleCondition } from '../../domain/draft'
 import { MAX_CHEMICALS_LENGTH, MAX_NOTE_LENGTH } from '../../domain/history'
-import type { RecordDraft, WashSettings, WaterType } from '../../domain/types'
+import type { MenuId, RecordDraft, WashSettings, WaterType } from '../../domain/types'
 
 interface RecordFormProps {
   draft: RecordDraft
   settings: WashSettings
+  /** 計画上の次回メニュー。下書きで未選択のときの既定値 */
+  plannedMenu: MenuId
+  /** 今日の日付（YYYY-MM-DD） */
+  today: string
   canRecord: boolean
   onDraftChange: (draft: RecordDraft) => void
   onReset: () => void
@@ -18,11 +22,45 @@ function toWaterType(value: string): WaterType | null {
   return value === 'pure' || value === 'tap' ? value : null
 }
 
-export function RecordForm({ draft, settings, canRecord, onDraftChange, onReset, onRecord }: RecordFormProps) {
+function toMenuId(value: string): MenuId | undefined {
+  return MENUS.find((menu) => menu.id === value)?.id
+}
+
+/** 今日・空欄・未来日は「未設定（今日）」として扱う。 */
+function toWashedOn(value: string, today: string): string | undefined {
+  return value === '' || value >= today ? undefined : value
+}
+
+export function RecordForm({ draft, settings, plannedMenu, today, canRecord, onDraftChange, onReset, onRecord }: RecordFormProps) {
   const followed = settings.hasPureWater ? '純水' : '水道水'
 
   return (
     <div className="record">
+      <label className="field">
+        <span>洗車日</span>
+        <input
+          type="date"
+          max={today}
+          value={draft.washedOn ?? today}
+          onChange={(e) => onDraftChange({ ...draft, washedOn: toWashedOn(e.target.value, today) })}
+        />
+      </label>
+
+      <label className="field">
+        <span>今回のメニュー</span>
+        <select
+          value={draft.menu ?? plannedMenu}
+          onChange={(e) => onDraftChange({ ...draft, menu: toMenuId(e.target.value) })}
+        >
+          {MENUS.map((menu) => (
+            <option key={menu.id} value={menu.id}>
+              {menu.name}
+              {menu.id === plannedMenu ? '（予定）' : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <label className="field">
         <span>水の種類</span>
         <select

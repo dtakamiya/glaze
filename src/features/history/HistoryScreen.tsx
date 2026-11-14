@@ -1,4 +1,4 @@
-import { conditionLabel } from '../../domain/catalog'
+import { conditionLabel, menuName } from '../../domain/catalog'
 import type { WashRecord, WaterType } from '../../domain/types'
 
 const WATER_LABEL: Record<WaterType, string> = { pure: '純水', tap: '水道水' }
@@ -54,6 +54,7 @@ export function HistoryScreen({ history, onRemove }: HistoryScreenProps) {
                     ))}
                   </ul>
                   <ul className="tags tags--meta">
+                    {record.menu !== undefined && <li className="tag tag--menu">{menuName(record.menu)}</li>}
                     {record.waterType !== null && (
                       <li className="tag tag--meta">{WATER_LABEL[record.waterType]}</li>
                     )}

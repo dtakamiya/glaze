@@ -1,9 +1,17 @@
 import { z } from 'zod'
-import { DEFAULT_SETTINGS } from '../domain/settings'
+import { DEFAULT_SCHEDULE_PREFS, DEFAULT_SETTINGS } from '../domain/settings'
 import { EMPTY_DRAFT } from '../domain/draft'
-import type { RecordDraft, WashPlan, WashRecord, WashSettings } from '../domain/types'
+import type { RecordDraft, SchedulePrefs, WashPlan, WashRecord, WashSettings } from '../domain/types'
 import { migrateHistoryV1, migratePlanV1 } from './migrations'
-import { draftSchema, historySchema, historySchemaV1, planSchema, planSchemaV1, settingsSchema } from './schemas'
+import {
+  draftSchema,
+  historySchema,
+  historySchemaV1,
+  planSchema,
+  planSchemaV1,
+  schedulePrefsSchema,
+  settingsSchema,
+} from './schemas'
 
 // スキーマを変えるときはキーのバージョンを上げ、移行処理を追加すること。
 // v1 キーは移行元として読むだけで削除しない（不具合時のロールバック用）。
@@ -11,6 +19,7 @@ export const PLAN_KEY = 'glaze:v2:plan'
 export const HISTORY_KEY = 'glaze:v2:history'
 export const SETTINGS_KEY = 'glaze:v2:settings'
 export const DRAFT_KEY = 'glaze:v2:draft'
+export const SCHEDULE_KEY = 'glaze:v2:schedule'
 export const LEGACY_PLAN_KEY = 'glaze:v1:plan'
 export const LEGACY_HISTORY_KEY = 'glaze:v1:history'
 
@@ -126,4 +135,12 @@ export function loadDraft(): RecordDraft {
 
 export function saveDraft(draft: RecordDraft): boolean {
   return write(DRAFT_KEY, draft)
+}
+
+export function loadSchedulePrefs(): SchedulePrefs {
+  return read(SCHEDULE_KEY, schedulePrefsSchema, () => DEFAULT_SCHEDULE_PREFS)
+}
+
+export function saveSchedulePrefs(prefs: SchedulePrefs): boolean {
+  return write(SCHEDULE_KEY, prefs)
 }

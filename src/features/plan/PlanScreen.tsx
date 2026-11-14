@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { findTemplate } from '../../domain/catalog'
-import { MAX_STEP_NAME_LENGTH } from '../../domain/plan'
-import type { RecordDraft, WashPlan, WashSettings } from '../../domain/types'
+import { MAX_STEP_NAME_LENGTH, planProgress } from '../../domain/plan'
+import type { MenuId, RecordDraft, WashPlan, WashSettings } from '../../domain/types'
 import { RecordForm } from './RecordForm'
 import { ReminderBanner } from './ReminderBanner'
 import { TipPanel, TipToggle } from './StepTip'
@@ -10,8 +10,15 @@ interface PlanScreenProps {
   plan: WashPlan
   settings: WashSettings
   draft: RecordDraft
+  plannedMenu: MenuId
+  /** 記録直後の案内。無ければ null */
+  notice: string | null
+  /** 今日の日付（YYYY-MM-DD） */
+  today: string
   /** 最後の洗車からの日数（履歴なしは null） */
   daysSinceLastWash: number | null
+  /** 設定中の洗車間隔（週） */
+  intervalWeeks: number
   onDraftChange: (draft: RecordDraft) => void
   onPureWaterChange: (hasPureWater: boolean) => void
   onToggle: (stepId: string) => void
@@ -26,7 +33,11 @@ export function PlanScreen({
   plan,
   settings,
   draft,
+  plannedMenu,
+  notice,
+  today,
   daysSinceLastWash,
+  intervalWeeks,
   onDraftChange,
   onPureWaterChange,
   onToggle,
@@ -38,8 +49,7 @@ export function PlanScreen({
 }: PlanScreenProps) {
   const [newStep, setNewStep] = useState('')
   const [openTipIds, setOpenTipIds] = useState<readonly string[]>([])
-  const doneCount = plan.steps.filter((s) => s.done).length
-  const total = plan.steps.length
+  const { done: doneCount, total } = planProgress(plan)
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault()
@@ -60,7 +70,11 @@ export function PlanScreen({
     <section className="screen" aria-labelledby="plan-title">
       <h1 id="plan-title">洗車プラン</h1>
 
-      <ReminderBanner days={daysSinceLastWash} />
+      <div aria-live="polite" className="toast-region">
+        {notice !== null && <p className="toast">{notice}</p>}
+      </div>
+
+      <ReminderBanner days={daysSinceLastWash} intervalWeeks={intervalWeeks} />
 
       <label className="toggle">
         <input
@@ -83,7 +97,7 @@ export function PlanScreen({
           <div className="progress__fill" style={{ width: total ? `${(doneCount / total) * 100}%` : 0 }} />
         </div>
         <span className="progress__label">
-          {doneCount} / {total} 工程
+          {doneCount} / {total} 工程{total > 0 && doneCount >= total ? ' ✓' : ''}
         </span>
       </div>
 
@@ -139,6 +153,8 @@ export function PlanScreen({
       <RecordForm
         draft={draft}
         settings={settings}
+        plannedMenu={plannedMenu}
+        today={today}
         canRecord={doneCount > 0}
         onDraftChange={onDraftChange}
         onReset={onReset}
